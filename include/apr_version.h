@@ -38,8 +38,7 @@
  */
 
 
-#define APR_COPYRIGHT "Copyright (c) 2000-2024 The Apache Software " \
-                      "Foundation or its licensors, as applicable."
+#define APR_COPYRIGHT "Copyright 2024 The Apache Software Foundation."
 
 /* The numeric compile-time version constants. These constants are the
  * authoritative version numbers for APR.
