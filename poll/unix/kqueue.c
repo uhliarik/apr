@@ -46,7 +46,6 @@ static apr_int16_t get_kqueue_revent(apr_int16_t event, apr_int16_t flags)
 struct apr_pollset_private_t
 {
     int kqueue_fd;
-    struct kevent kevent;
     apr_uint32_t setsize;
     struct kevent *ke_set;
     apr_pollfd_t *result_set;
@@ -144,8 +143,11 @@ static apr_status_t impl_pollset_add(apr_pollset_t *pollset,
                                      const apr_pollfd_t *descriptor)
 {
     apr_os_sock_t fd;
-    pfd_elem_t *elem = NULL;
     apr_status_t rv = APR_SUCCESS;
+    pfd_elem_t *elem = NULL;
+    void *udata = (void *)descriptor;
+    struct kevent events[2];
+    int nevents = 0;
 
     if (!(pollset->flags & APR_POLLSET_NOCOPY)) {
         pollset_lock_rings();
@@ -159,6 +161,8 @@ static apr_status_t impl_pollset_add(apr_pollset_t *pollset,
             APR_RING_ELEM_INIT(elem, link);
         }
         elem->pfd = *descriptor;
+
+        udata = elem;
     }
 
     if (descriptor->desc_type == APR_POLL_SOCKET) {
@@ -169,35 +173,17 @@ static apr_status_t impl_pollset_add(apr_pollset_t *pollset,
     }
 
     if (descriptor->reqevents & APR_POLLIN) {
-        if (pollset->flags & APR_POLLSET_NOCOPY) {
-            EV_SET(&pollset->p->kevent, fd, EVFILT_READ, EV_ADD, 0, 0,
-                   (void *)descriptor);
-        }
-        else {
-            EV_SET(&pollset->p->kevent, fd, EVFILT_READ, EV_ADD, 0, 0,
-                   elem);
-        }
-
-        if (kevent(pollset->p->kqueue_fd, &pollset->p->kevent, 1, NULL, 0,
-                   NULL) == -1) {
-            rv = apr_get_netos_error();
-        }
+        EV_SET(&events[nevents], fd, EVFILT_READ, EV_ADD, 0, 0, udata);
+        nevents++;
+    }
+    if (descriptor->reqevents & APR_POLLOUT) {
+        EV_SET(&events[nevents], fd, EVFILT_WRITE, EV_ADD, 0, 0, udata);
+        nevents++;
     }
 
-    if (descriptor->reqevents & APR_POLLOUT && rv == APR_SUCCESS) {
-        if (pollset->flags & APR_POLLSET_NOCOPY) {
-            EV_SET(&pollset->p->kevent, fd, EVFILT_WRITE, EV_ADD, 0, 0,
-                   (void *)descriptor);
-        }
-        else {
-            EV_SET(&pollset->p->kevent, fd, EVFILT_WRITE, EV_ADD, 0, 0,
-                   elem);
-        }
-
-        if (kevent(pollset->p->kqueue_fd, &pollset->p->kevent, 1, NULL, 0,
-                   NULL) == -1) {
-            rv = apr_get_netos_error();
-        }
+    if (nevents && kevent(pollset->p->kqueue_fd, events, nevents, NULL, 0,
+                          NULL) == -1) {
+        rv = apr_get_netos_error();
     }
 
     if (!(pollset->flags & APR_POLLSET_NOCOPY)) {
@@ -219,6 +205,8 @@ static apr_status_t impl_pollset_remove(apr_pollset_t *pollset,
 {
     apr_status_t rv;
     apr_os_sock_t fd;
+    struct kevent events[2];
+    int nevents = 0;
 
     if (descriptor->desc_type == APR_POLL_SOCKET) {
         fd = descriptor->desc.s->socketdes;
@@ -227,23 +215,19 @@ static apr_status_t impl_pollset_remove(apr_pollset_t *pollset,
         fd = descriptor->desc.f->filedes;
     }
 
-    rv = APR_NOTFOUND; /* unless at least one of the specified conditions is */
     if (descriptor->reqevents & APR_POLLIN) {
-        EV_SET(&pollset->p->kevent, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-
-        if (kevent(pollset->p->kqueue_fd, &pollset->p->kevent, 1, NULL, 0,
-                   NULL) != -1) {
-            rv = APR_SUCCESS;
-        }
+        EV_SET(&events[nevents], fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+        nevents++;
+    }
+    if (descriptor->reqevents & APR_POLLOUT) {
+        EV_SET(&events[nevents], fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+        nevents++;
     }
 
-    if (descriptor->reqevents & APR_POLLOUT) {
-        EV_SET(&pollset->p->kevent, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-
-        if (kevent(pollset->p->kqueue_fd, &pollset->p->kevent, 1, NULL, 0,
-                   NULL) != -1) {
-            rv = APR_SUCCESS;
-        }
+    rv = APR_NOTFOUND; /* unless at least one of the specified conditions is */
+    if (nevents && kevent(pollset->p->kqueue_fd, events, nevents, NULL, 0,
+                          NULL) != -1) {
+        rv = APR_SUCCESS;
     }
 
     if (!(pollset->flags & APR_POLLSET_NOCOPY)) {
@@ -404,8 +388,9 @@ static apr_status_t impl_pollcb_add(apr_pollcb_t *pollcb,
                                     apr_pollfd_t *descriptor)
 {
     apr_os_sock_t fd;
-    struct kevent ev;
     apr_status_t rv = APR_SUCCESS;
+    struct kevent events[2];
+    int nevents = 0;
 
     if (descriptor->desc_type == APR_POLL_SOCKET) {
         fd = descriptor->desc.s->socketdes;
@@ -415,19 +400,16 @@ static apr_status_t impl_pollcb_add(apr_pollcb_t *pollcb,
     }
 
     if (descriptor->reqevents & APR_POLLIN) {
-        EV_SET(&ev, fd, EVFILT_READ, EV_ADD, 0, 0, descriptor);
-
-        if (kevent(pollcb->fd, &ev, 1, NULL, 0, NULL) == -1) {
-            rv = apr_get_netos_error();
-        }
+        EV_SET(&events[nevents], fd, EVFILT_READ, EV_ADD, 0, 0, descriptor);
+        nevents++;
+    }
+    if (descriptor->reqevents & APR_POLLOUT) {
+        EV_SET(&events[nevents], fd, EVFILT_WRITE, EV_ADD, 0, 0, descriptor);
+        nevents++;
     }
 
-    if (descriptor->reqevents & APR_POLLOUT && rv == APR_SUCCESS) {
-        EV_SET(&ev, fd, EVFILT_WRITE, EV_ADD, 0, 0, descriptor);
-
-        if (kevent(pollcb->fd, &ev, 1, NULL, 0, NULL) == -1) {
-            rv = apr_get_netos_error();
-        }
+    if (nevents && kevent(pollcb->fd, events, nevents, NULL, 0, NULL) == -1) {
+        rv = apr_get_netos_error();
     }
 
     return rv;
@@ -437,8 +419,9 @@ static apr_status_t impl_pollcb_remove(apr_pollcb_t *pollcb,
                                        apr_pollfd_t *descriptor)
 {
     apr_status_t rv;
-    struct kevent ev;
     apr_os_sock_t fd;
+    struct kevent events[2];
+    int nevents = 0;
 
     if (descriptor->desc_type == APR_POLL_SOCKET) {
         fd = descriptor->desc.s->socketdes;
@@ -447,21 +430,18 @@ static apr_status_t impl_pollcb_remove(apr_pollcb_t *pollcb,
         fd = descriptor->desc.f->filedes;
     }
 
-    rv = APR_NOTFOUND; /* unless at least one of the specified conditions is */
     if (descriptor->reqevents & APR_POLLIN) {
-        EV_SET(&ev, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-
-        if (kevent(pollcb->fd, &ev, 1, NULL, 0, NULL) != -1) {
-            rv = APR_SUCCESS;
-        }
+        EV_SET(&events[nevents], fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+        nevents++;
+    }
+    if (descriptor->reqevents & APR_POLLOUT) {
+        EV_SET(&events[nevents], fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+        nevents++;
     }
 
-    if (descriptor->reqevents & APR_POLLOUT) {
-        EV_SET(&ev, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-
-        if (kevent(pollcb->fd, &ev, 1, NULL, 0, NULL) != -1) {
-            rv = APR_SUCCESS;
-        }
+    rv = APR_NOTFOUND; /* unless at least one of the specified conditions is */
+    if (nevents && kevent(pollcb->fd, events, nevents, NULL, 0, NULL) != -1) {
+        rv = APR_SUCCESS;
     }
 
     return rv;
