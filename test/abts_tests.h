@@ -93,7 +93,8 @@ const struct testlist {
     {testskiplist},
     {testsiphash},
     {testjson},
-    {testjose}
+    {testjose},
+    {testbuffer}
 };
 
 #endif /* APR_TEST_INCLUDES */

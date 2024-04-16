@@ -83,6 +83,7 @@ ALL_TESTS = \
 	$(INTDIR)\testatomic.obj \
 	$(INTDIR)\testbase64.obj \
 	$(INTDIR)\testbuckets.obj \
+	$(INTDIR)\testbuffer.obj \
 	$(INTDIR)\testcond.obj \
 	$(INTDIR)\testcrypto.obj \
 	$(INTDIR)\testdate.obj \
