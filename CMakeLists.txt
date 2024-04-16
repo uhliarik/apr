@@ -213,6 +213,7 @@ SET(APR_PUBLIC_HEADERS_STATIC
   include/apr_atomic.h
   include/apr_base64.h
   include/apr_buckets.h
+  include/apr_buffer.h
   include/apr_crypto.h
   include/apr_cstr.h
   include/apr_date.h
@@ -297,6 +298,7 @@ SET(APR_SOURCES
   buckets/apr_buckets_refcount.c
   buckets/apr_buckets_simple.c
   buckets/apr_buckets_socket.c
+  buffer/apr_buffer.c
   crypto/apr_crypto.c
   crypto/apr_crypto_prng.c
   crypto/apr_md4.c
@@ -420,6 +422,7 @@ SET(APR_TEST_SUITES
   testatomic
   testbase64
   testbuckets
+  testbuffer
   testcond
   testcrypto
   testdate
