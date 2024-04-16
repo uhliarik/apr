@@ -151,6 +151,7 @@ APR_DECLARE(apr_status_t) apr_dbd_init(apr_pool_t *pool)
     return ret;
 }
 
+/* add apu_err_t so module load errors are returned */
 APR_DECLARE(apr_status_t) apr_dbd_get_driver(apr_pool_t *pool, const char *name,
                                              const apr_dbd_driver_t **driver)
 {
@@ -158,6 +159,7 @@ APR_DECLARE(apr_status_t) apr_dbd_get_driver(apr_pool_t *pool, const char *name,
     char modname[32];
     char symname[34];
     apr_dso_handle_sym_t symbol;
+    apu_err_t *err = apr_pcalloc(pool, sizeof(apu_err_t));
 #endif
     apr_status_t rv;
 
@@ -190,7 +192,7 @@ APR_DECLARE(apr_status_t) apr_dbd_get_driver(apr_pool_t *pool, const char *name,
                  "apr_dbd_%s-" APR_STRINGIFY(APR_MAJOR_VERSION) ".so", name);
 #endif
     apr_snprintf(symname, sizeof(symname), "apr_dbd_%s_driver", name);
-    rv = apu_dso_load(NULL, &symbol, modname, symname, pool);
+    rv = apu_dso_load(NULL, &symbol, modname, symname, pool, err);
     if (rv == APR_SUCCESS || rv == APR_EINIT) { /* previously loaded?!? */
         *driver = symbol;
         name = apr_pstrdup(pool, name);

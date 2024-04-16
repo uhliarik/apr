@@ -1,6 +1,9 @@
                                                      -*- coding: utf-8 -*-
 Changes for APR 2.0.0
 
+  *) Pass details of module loading errors back to the caller through the
+     apu_err_t structure. [Graham Leggett]
+
   *) apr_buffer: Add the apr_buffer API. [Graham Leggett]
 
   *) apr_escape: Add apr_escape_json() and apr_pescape_json().

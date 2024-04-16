@@ -190,10 +190,11 @@ APR_DECLARE(apr_status_t) apr_crypto_get_driver(
     apr_dso_handle_sym_t symbol;
 #endif
     apr_pool_t *rootp;
+    apu_err_t *err = apr_pcalloc(pool, sizeof(apu_err_t));
     apr_status_t rv;
 
     if (result) {
-        *result = NULL; /* until further notice */
+        *result = err;
     }
 
 #if APR_HAVE_MODULAR_DSO
@@ -225,7 +226,7 @@ APR_DECLARE(apr_status_t) apr_crypto_get_driver(
             "apr_crypto_%s-" APR_STRINGIFY(APR_MAJOR_VERSION) ".so", name);
 #endif
     apr_snprintf(symname, sizeof(symname), "apr_crypto_%s_driver", name);
-    rv = apu_dso_load(&dso, &symbol, modname, symname, rootp);
+    rv = apu_dso_load(&dso, &symbol, modname, symname, rootp, err);
     if (rv == APR_SUCCESS || rv == APR_EINIT) { /* previously loaded?!? */
         apr_crypto_driver_t *d = symbol;
         rv = APR_SUCCESS;
@@ -241,17 +242,6 @@ APR_DECLARE(apr_status_t) apr_crypto_get_driver(
         }
     }
     apu_dso_mutex_unlock();
-
-    if (APR_SUCCESS != rv && result && !*result) {
-        char *buffer = apr_pcalloc(pool, ERROR_SIZE);
-        apu_err_t *err = apr_pcalloc(pool, sizeof(apu_err_t));
-        if (err && buffer) {
-            apr_dso_error(dso, buffer, ERROR_SIZE - 1);
-            err->msg = buffer;
-            err->reason = apr_pstrdup(pool, modname);
-            *result = err;
-        }
-    }
 
 #else /* not builtin and !APR_HAS_DSO => not implemented */
     rv = APR_ENOTIMPL;

@@ -131,6 +131,8 @@ APR_DECLARE(apr_status_t) apr_dbm_get_driver(const apr_dbm_driver_t **vtable,
 
 #else /* APR_HAVE_MODULAR_DSO */
 
+    apu_err_t *err = apr_pcalloc(pool, sizeof(apu_err_t));
+
     char modname[32];
     char symname[34];
     apr_dso_handle_t *dso;
@@ -139,7 +141,7 @@ APR_DECLARE(apr_status_t) apr_dbm_get_driver(const apr_dbm_driver_t **vtable,
     int usertype = 0;
 
     if (result) {
-        *result = NULL; /* until further notice */
+        *result = err; /* until further notice */
     }
 
     if (!type) {
@@ -210,7 +212,7 @@ APR_DECLARE(apr_status_t) apr_dbm_get_driver(const apr_dbm_driver_t **vtable,
 #endif
     apr_snprintf(symname, sizeof(symname), "apr_dbm_type_%s", type);
 
-    rv = apu_dso_load(&dso, &symbol, modname, symname, pool);
+    rv = apu_dso_load(&dso, &symbol, modname, symname, pool, err);
     if (rv == APR_SUCCESS || rv == APR_EINIT) { /* previously loaded?!? */
         *vtable = symbol;
         if (usertype)
@@ -222,17 +224,6 @@ APR_DECLARE(apr_status_t) apr_dbm_get_driver(const apr_dbm_driver_t **vtable,
         *vtable = NULL;
 
     apu_dso_mutex_unlock();
-
-    if (APR_SUCCESS != rv && result && !*result) {
-        char *buffer = apr_pcalloc(pool, ERROR_SIZE);
-        apu_err_t *err = apr_pcalloc(pool, sizeof(apu_err_t));
-        if (err && buffer) {
-            apr_dso_error(dso, buffer, ERROR_SIZE - 1);
-            err->msg = buffer;
-            err->reason = apr_pstrdup(pool, modname);
-            *result = err;
-        }
-    }
 
     return rv;
 
