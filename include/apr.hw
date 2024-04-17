@@ -478,6 +478,7 @@ typedef  apr_int32_t             apr_intptr_t;
 #endif
 
 #define APR_SIZE_MAX    (~((apr_size_t)0))
+#define APR_OFF_MAX     (sizeof(apr_off_t) == 4 ? APR_INT32_MAX : sizeof(apr_off_t) == 8 ? APR_INT64_MAX :0)
 
 /* Definitions that APR programs need to work properly. */
 

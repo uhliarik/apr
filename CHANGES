@@ -1,6 +1,9 @@
                                                      -*- coding: utf-8 -*-
 Changes for APR 2.0.0
 
+  *) Add APR_OFF_MAX to give the maximum value of apr_off_t. [Graham
+     Leggett]
+
   *) Pass details of module loading errors back to the caller through the
      apu_err_t structure. [Graham Leggett]
 
