@@ -77,9 +77,9 @@ typedef struct
       * negative, the data is zero terminated and the absolute value
       * represents the data length including terminating zero.
       *
-      * we use apr_int64_t to make it simple to detect overflow.
+      * we use apr_off_t to make it simple to detect overflow.
       */
-    apr_int64_t size;
+    apr_off_t size;
 
 } apr_buffer_t;
 

@@ -33,7 +33,7 @@ APR_DECLARE(apr_status_t) apr_buffer_mem_set(apr_buffer_t *buf,
                                              void *mem, apr_size_t len)
 {
 
-    if (len > APR_INT64_MAX) {
+    if (len > APR_OFF_MAX) {
         return APR_EINVAL;
     }
 
@@ -48,7 +48,7 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_mem_make(apr_pool_t *pool,
 {
     apr_buffer_t *buf;
 
-    if (len > APR_INT64_MAX) {
+    if (len > APR_OFF_MAX) {
         return NULL;
     }
 
@@ -66,7 +66,7 @@ APR_DECLARE(apr_status_t) apr_buffer_str_set(apr_buffer_t *buf,
                                              char *str, apr_ssize_t len)
 {
 
-    if (len > APR_INT64_MAX) {
+    if (len > APR_OFF_MAX) {
         return APR_EINVAL;
     }
 
@@ -76,7 +76,7 @@ APR_DECLARE(apr_status_t) apr_buffer_str_set(apr_buffer_t *buf,
     }
     else if (len < 0) {
         apr_size_t slen = strlen(str);
-        if (slen <= APR_INT64_MAX) {
+        if (slen <= APR_OFF_MAX) {
             buf->d.str = str;
             buf->size = -(slen + 1);
         }
@@ -109,7 +109,7 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_str_make(apr_pool_t *pool,
     }
     else if (len < 0) {
         slen = strlen(str);
-        if (slen <= APR_INT64_MAX) {
+        if (slen <= APR_OFF_MAX) {
             size = -(slen + 1);
         }
         else {
