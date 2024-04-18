@@ -513,7 +513,9 @@ IF (APR_BUILD_SHARED)
   LIST(APPEND install_targets ${apr_libname})
   LIST(APPEND install_bin_pdb ${PROJECT_BINARY_DIR}/${apr_libname}.pdb)
   TARGET_LINK_LIBRARIES(${apr_libname} ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
-  SET_TARGET_PROPERTIES(${apr_libname} PROPERTIES COMPILE_DEFINITIONS "APR_DECLARE_EXPORT;APR_HAVE_MODULAR_DSO=1")
+  TARGET_COMPILE_DEFINITIONS(${apr_libname}
+                             PRIVATE "APR_DECLARE_EXPORT;APR_HAVE_MODULAR_DSO=1"
+                             INTERFACE "APR_DECLARE_IMPORT;APR_HAVE_MODULAR_DSO=1")
   ADD_DEPENDENCIES(${apr_libname} test_char_header)
 ENDIF()
 
@@ -522,7 +524,9 @@ IF (APR_BUILD_STATIC)
   LIST(APPEND install_targets ${apr_name})
   # no .pdb file generated for static libraries
   TARGET_LINK_LIBRARIES(${apr_name} ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
-  SET_TARGET_PROPERTIES(${apr_name} PROPERTIES COMPILE_DEFINITIONS "APR_DECLARE_STATIC;APR_HAVE_MODULAR_DSO=1")
+  TARGET_COMPILE_DEFINITIONS(${apr_name}
+                             PRIVATE "APR_DECLARE_STATIC;APR_HAVE_MODULAR_DSO=1"
+                             INTERFACE "APR_DECLARE_STATIC;APR_HAVE_MODULAR_DSO=1")
   ADD_DEPENDENCIES(${apr_name} test_char_header)
 ENDIF()
 
@@ -602,19 +606,14 @@ IF(APR_BUILD_TESTAPR)
   IF(TEST_STATIC_LIBS)
     SET(whichapr    ${apr_name})
     SET(whichaprapp aprapp-2)
-    SET(apiflag     -DAPR_DECLARE_STATIC)
   ELSE()
     SET(whichapr    ${apr_libname})
     SET(whichaprapp libaprapp-2)
-    SET(apiflag)
   ENDIF()
 
   ADD_EXECUTABLE(testapp test/testapp.c)
   TARGET_LINK_LIBRARIES(testapp ${whichapr} ${whichaprapp} ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
   SET_TARGET_PROPERTIES(testapp PROPERTIES LINK_FLAGS /entry:wmainCRTStartup)
-  IF(apiflag)
-    SET_TARGET_PROPERTIES(testapp PROPERTIES COMPILE_FLAGS ${apiflag})
-  ENDIF()
   ADD_TEST(NAME testapp COMMAND testapp)
 
   SET (APR_TEST_SOURCES
@@ -632,9 +631,6 @@ IF(APR_BUILD_TESTAPR)
   ADD_EXECUTABLE(testall ${APR_TEST_SOURCES})
   TARGET_LINK_LIBRARIES(testall ${whichapr} ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
   SET_TARGET_PROPERTIES(testall PROPERTIES COMPILE_DEFINITIONS "BINPATH=$<TARGET_FILE_DIR:testall>")
-  IF(apiflag)
-    SET_TARGET_PROPERTIES(testall PROPERTIES COMPILE_FLAGS ${apiflag})
-  ENDIF()
 
   FOREACH(test ${APR_TEST_SUITES})
     ADD_TEST(NAME ${test} COMMAND testall -v ${test})
@@ -648,9 +644,6 @@ IF(APR_BUILD_TESTAPR)
   GET_PROPERTY(link_flags TARGET mod_test PROPERTY LINK_FLAGS)
   SET(link_flags "${link_flags} /export:count_reps")
   SET_TARGET_PROPERTIES(mod_test PROPERTIES LINK_FLAGS ${link_flags})
-  IF(apiflag)
-    SET_TARGET_PROPERTIES(mod_test PROPERTIES COMPILE_FLAGS ${apiflag})
-  ENDIF()
 
   # Build all the single-source executable files with no special build
   # requirements.
@@ -679,9 +672,6 @@ IF(APR_BUILD_TESTAPR)
     ADD_EXECUTABLE(${proggie} ${sourcefile})
     TARGET_LINK_LIBRARIES(${proggie} ${whichapr} ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
     SET_TARGET_PROPERTIES(${proggie} PROPERTIES COMPILE_DEFINITIONS "BINPATH=$<TARGET_FILE_DIR:${proggie}>")
-    IF(apiflag)
-      SET_TARGET_PROPERTIES(${proggie} PROPERTIES COMPILE_FLAGS ${apiflag})
-    ENDIF()
   ENDFOREACH()
 
   # Add tests for programs that run by themselves with no arguments.
