@@ -612,7 +612,7 @@ IF(APR_BUILD_TESTAPR)
   ENDIF()
 
   ADD_EXECUTABLE(testapp test/testapp.c)
-  TARGET_LINK_LIBRARIES(testapp ${whichapr} ${whichaprapp} ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
+  TARGET_LINK_LIBRARIES(testapp ${whichapr} ${whichaprapp})
   SET_TARGET_PROPERTIES(testapp PROPERTIES LINK_FLAGS /entry:wmainCRTStartup)
   ADD_TEST(NAME testapp COMMAND testapp)
 
@@ -629,7 +629,7 @@ IF(APR_BUILD_TESTAPR)
   ENDFOREACH()
 
   ADD_EXECUTABLE(testall ${APR_TEST_SOURCES})
-  TARGET_LINK_LIBRARIES(testall ${whichapr} ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
+  TARGET_LINK_LIBRARIES(testall ${whichapr})
   SET_TARGET_PROPERTIES(testall PROPERTIES COMPILE_DEFINITIONS "BINPATH=$<TARGET_FILE_DIR:testall>")
 
   FOREACH(test ${APR_TEST_SUITES})
@@ -637,7 +637,7 @@ IF(APR_BUILD_TESTAPR)
   ENDFOREACH()
 
   ADD_LIBRARY(mod_test MODULE test/mod_test.c)
-  TARGET_LINK_LIBRARIES(mod_test ${whichapr} ${APR_SYSTEM_LIBS})
+  TARGET_LINK_LIBRARIES(mod_test ${whichapr})
   SET_PROPERTY(TARGET mod_test APPEND PROPERTY LINK_FLAGS /export:print_hello)
   # nasty work-around for difficulties adding more than one additional flag
   # (they get joined in a bad way behind the scenes)
@@ -670,7 +670,7 @@ IF(APR_BUILD_TESTAPR)
   FOREACH(sourcefile ${single_source_programs})
     STRING(REGEX REPLACE ".*/([^\\]+)\\.c" "\\1" proggie ${sourcefile})
     ADD_EXECUTABLE(${proggie} ${sourcefile})
-    TARGET_LINK_LIBRARIES(${proggie} ${whichapr} ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
+    TARGET_LINK_LIBRARIES(${proggie} ${whichapr})
     SET_TARGET_PROPERTIES(${proggie} PROPERTIES COMPILE_DEFINITIONS "BINPATH=$<TARGET_FILE_DIR:${proggie}>")
   ENDFOREACH()
 
