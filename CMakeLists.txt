@@ -451,6 +451,7 @@ SET(APR_TEST_SUITES
   testjson
   testjose
   testipsub
+  testldap
   testlfs
   testlfsabi
   testlock
