@@ -110,6 +110,7 @@ ENDIF()
 
 SET(apr_have_ipv6_10 0)
 SET(apu_have_crypto_10 0)
+SET(apu_have_ldap_10 0)
 SET(apu_use_libxml2_10 0)
 SET(apu_use_expat_10 0)
 SET(apu_use_xmllite_10 0)
@@ -123,6 +124,10 @@ ENDIF()
 
 IF(APU_HAVE_CRYPTO)
   SET(apu_have_crypto_10 1)
+ENDIF()
+
+IF(APU_HAVE_LDAP)
+  SET(apu_have_ldap_10 1)
 ENDIF()
 
 IF(APU_USE_EXPAT)

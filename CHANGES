@@ -1,6 +1,8 @@
                                                      -*- coding: utf-8 -*-
 Changes for APR 2.0.0
 
+  *) apr_ldap: Add the new APR LDAP API. [Graham Leggett]
+
   *) Add APR_OFF_MAX to give the maximum value of apr_off_t. [Graham
      Leggett]
 

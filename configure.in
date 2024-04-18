@@ -34,6 +34,7 @@ sinclude(build/dbm.m4)
 sinclude(build/dbd.m4)
 sinclude(build/dso.m4)
 sinclude(build/iconv.m4)
+sinclude(build/ldap.m4)
 
 sinclude(build/ax_prog_cc_for_build.m4)
 
@@ -3150,6 +3151,9 @@ APU_CHECK_DBD_SQLITE2
 APU_CHECK_DBD_ORACLE
 APU_CHECK_DBD_ODBC
 
+dnl Find LDAP backend
+APU_FIND_LDAP
+
 dnl select an XML parser
 APU_FIND_XML
 
@@ -3173,6 +3177,8 @@ AC_CHECK_FUNCS(crypt_r, [ crypt_r="1" ], [ crypt_r="0" ])
 if test "$crypt_r" = "1"; then
   APU_CHECK_CRYPT_R_STYLE
 fi
+
+AC_CHECK_HEADERS([sasl.h sasl/sasl.h])
 
 APRUTIL_LIBNAME="aprutil${libsuffix}"
 AC_SUBST(APRUTIL_LIBNAME)

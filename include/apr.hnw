@@ -496,6 +496,11 @@ typedef int apr_wait_t;
 #define APU_HAVE_COMMONCRYPTO   0
 #endif
 
+#define APR_HAS_LDAP                0
+#define APR_HAS_OPENLDAP_LDAPSDK    0
+#define APR_HAS_MICROSOFT_LDAPSDK   0
+#define APR_HAS_OTHER_LDAPSDK       0
+
 #define APU_HAVE_ICONV          1
 #define APR_HAS_XLATE           (APU_HAVE_ICONV)
 

@@ -137,5 +137,6 @@ abts_suite *testsiphash(abts_suite *suite);
 abts_suite *testjson(abts_suite *suite);
 abts_suite *testjose(abts_suite *suite);
 abts_suite *testbuffer(abts_suite *suite);
+abts_suite *testldap(abts_suite *suite);
 
 #endif /* APR_TEST_INCLUDES */

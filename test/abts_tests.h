@@ -94,7 +94,8 @@ const struct testlist {
     {testsiphash},
     {testjson},
     {testjose},
-    {testbuffer}
+    {testbuffer},
+    {testldap}
 };
 
 #endif /* APR_TEST_INCLUDES */

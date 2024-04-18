@@ -705,6 +705,13 @@ typedef int apr_wait_t;
 #define APU_HAVE_NSS           @apu_have_nss@
 #define APU_HAVE_COMMONCRYPTO  @apu_have_commoncrypto@
 
+#define APR_HAS_LDAP              @apu_have_ldap@
+#define APR_HAS_OPENLDAP_LDAPSDK  @apu_have_ldap_openldap@
+#define APR_HAS_MICROSOFT_LDAPSDK @apu_have_ldap_microsoft@
+#define APR_HAS_TIVOLI_LDAPSDK    @apu_have_ldap_tivoli@
+#define APR_HAS_ZOS_LDAPSDK       @apu_have_ldap_zos@
+#define APR_HAS_OTHER_LDAPSDK     @apu_have_ldap_other@
+
 #define APU_HAVE_ICONV         @have_iconv@
 #define APR_HAS_XLATE          (APU_HAVE_ICONV)
 
