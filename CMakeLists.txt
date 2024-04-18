@@ -512,7 +512,8 @@ IF (APR_BUILD_SHARED)
   ADD_LIBRARY(${apr_libname} SHARED ${APR_SOURCES} ${APR_PUBLIC_HEADERS_GENERATED} libapr.rc)
   LIST(APPEND install_targets ${apr_libname})
   LIST(APPEND install_bin_pdb ${PROJECT_BINARY_DIR}/${apr_libname}.pdb)
-  TARGET_LINK_LIBRARIES(${apr_libname} ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
+  TARGET_LINK_LIBRARIES(${apr_libname}
+                        PRIVATE ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
   TARGET_COMPILE_DEFINITIONS(${apr_libname}
                              PRIVATE "APR_DECLARE_EXPORT;APR_HAVE_MODULAR_DSO=1"
                              INTERFACE "APR_DECLARE_IMPORT;APR_HAVE_MODULAR_DSO=1")
@@ -523,7 +524,8 @@ IF (APR_BUILD_STATIC)
   ADD_LIBRARY(${apr_name} STATIC ${APR_SOURCES} ${APR_PUBLIC_HEADERS_GENERATED})
   LIST(APPEND install_targets ${apr_name})
   # no .pdb file generated for static libraries
-  TARGET_LINK_LIBRARIES(${apr_name} ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
+  TARGET_LINK_LIBRARIES(${apr_name}
+                        PRIVATE ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
   TARGET_COMPILE_DEFINITIONS(${apr_name}
                              PRIVATE "APR_DECLARE_STATIC;APR_HAVE_MODULAR_DSO=1"
                              INTERFACE "APR_DECLARE_STATIC;APR_HAVE_MODULAR_DSO=1")
