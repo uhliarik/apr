@@ -47,6 +47,10 @@ if (VCPKG_TARGET_IS_WINDOWS)
 
     vcpkg_cmake_install()
     vcpkg_copy_pdbs()
+    vcpkg_cmake_config_fixup(PACKAGE_NAME "apr"
+                             CONFIG_PATH "lib/cmake/apr")
+
+    file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/share")
 else()
     # In development
 endif()
