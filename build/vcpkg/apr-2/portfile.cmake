@@ -18,10 +18,17 @@ if (VCPKG_TARGET_IS_WINDOWS)
             crypto FEATURE_CRYPTO
             xlate FEATURE_XLATE
             dbd-sqlite3 FEATURE_DBD_SQLITE3
+            minimal-build FEATURE_MINIMAL_BUILD
     )
 
     string(COMPARE EQUAL "${VCPKG_LIBRARY_LINKAGE}" "static" APR_BUILD_STATIC)
     string(COMPARE EQUAL "${VCPKG_LIBRARY_LINKAGE}" "dynamic" APR_BUILD_SHARED)
+
+    if (FEATURE_MINIMAL_BUILD)
+      set(APU_USE_EXPAT OFF)
+    else()
+      set(APU_USE_EXPAT ON)
+    endif()
 
     vcpkg_cmake_configure(
         SOURCE_PATH "${SOURCE_PATH}"
@@ -29,11 +36,12 @@ if (VCPKG_TARGET_IS_WINDOWS)
             -DAPR_BUILD_STATIC=${APR_BUILD_STATIC}
             -DAPR_BUILD_SHARED=${APR_BUILD_SHARED}
             -DAPR_BUILD_TESTAPR=OFF
+            -DAPR_MINIMAL_BUILD=${FEATURE_MINIMAL_BUILD}
             -DINSTALL_PDB=OFF
             -DAPU_HAVE_CRYPTO=${FEATURE_CRYPTO}
             -DAPU_HAVE_ICONV=${FEATURE_XLATE}
             -DAPU_HAVE_SQLITE3=${FEATURE_DBD_SQLITE3}
-            -DAPU_USE_EXPAT=ON
+            -DAPU_USE_EXPAT=${APU_USE_EXPAT}
             -DAPR_INSTALL_PRIVATE_H=${INSTALL_PRIVATE_H}
     )
 

@@ -36,4 +36,4 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Vcpkg Install
-      run: C:\vcpkg\vcpkg.exe install apr-2 --head --overlay-ports ${{ github.workspace }}\build\vcpkg --triplet ${{ matrix.triplet }} --debug
+      run: C:\vcpkg\vcpkg.exe install apr-2[minimal-build] --head --overlay-ports ${{ github.workspace }}\build\vcpkg --triplet ${{ matrix.triplet }} --debug

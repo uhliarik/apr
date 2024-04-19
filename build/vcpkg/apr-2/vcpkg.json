@@ -29,6 +29,9 @@
     "private-headers": {
       "description": "Install non-standard files required for building Apache httpd"
     },
+    "minimal-build": {
+      "description": "Create minimal APR build."
+    },
     "xlate": {
       "description": "Xlate support",
       "dependencies": [
