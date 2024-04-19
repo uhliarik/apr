@@ -29,7 +29,6 @@ if (VCPKG_TARGET_IS_WINDOWS)
             -DAPU_HAVE_SQLITE3=${FEATURE_DBD_SQLITE3}
             -DAPU_USE_EXPAT=ON
             -DAPR_INSTALL_PRIVATE_H=${INSTALL_PRIVATE_H}
-            ${FEATURE_OPTIONS}
     )
 
     vcpkg_cmake_install()
