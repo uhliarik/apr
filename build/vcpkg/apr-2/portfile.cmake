@@ -20,9 +20,14 @@ if (VCPKG_TARGET_IS_WINDOWS)
             dbd-sqlite3 FEATURE_DBD_SQLITE3
     )
 
+    string(COMPARE EQUAL "${VCPKG_LIBRARY_LINKAGE}" "static" APR_BUILD_STATIC)
+    string(COMPARE EQUAL "${VCPKG_LIBRARY_LINKAGE}" "dynamic" APR_BUILD_SHARED)
+
     vcpkg_cmake_configure(
         SOURCE_PATH "${SOURCE_PATH}"
         OPTIONS
+            -DAPR_BUILD_STATIC=${APR_BUILD_STATIC}
+            -DAPR_BUILD_SHARED=${APR_BUILD_SHARED}
             -DINSTALL_PDB=OFF
             -DAPU_HAVE_CRYPTO=${FEATURE_CRYPTO}
             -DAPU_HAVE_ICONV=${FEATURE_XLATE}
