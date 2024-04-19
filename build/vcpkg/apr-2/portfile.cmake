@@ -15,15 +15,18 @@ if (VCPKG_TARGET_IS_WINDOWS)
     vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
         FEATURES
             private-headers INSTALL_PRIVATE_H
+            crypto FEATURE_CRYPTO
+            xlate FEATURE_XLATE
+            dbd-sqlite3 FEATURE_DBD_SQLITE3
     )
 
     vcpkg_cmake_configure(
         SOURCE_PATH "${SOURCE_PATH}"
         OPTIONS
             -DINSTALL_PDB=OFF
-            -DAPU_HAVE_CRYPTO=ON
-            -DAPU_HAVE_ICONV=ON
-            -DAPU_HAVE_SQLITE3=ON
+            -DAPU_HAVE_CRYPTO=${FEATURE_CRYPTO}
+            -DAPU_HAVE_ICONV=${FEATURE_XLATE}
+            -DAPU_HAVE_SQLITE3=${FEATURE_DBD_SQLITE3}
             -DAPU_USE_EXPAT=ON
             -DAPR_INSTALL_PRIVATE_H=${INSTALL_PRIVATE_H}
             ${FEATURE_OPTIONS}

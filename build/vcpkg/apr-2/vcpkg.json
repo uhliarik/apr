@@ -6,10 +6,7 @@
   "homepage": "https://apr.apache.org/",
   "supports": "!uwp",
   "dependencies": [
-    "libiconv",
     "expat",
-    "sqlite3",
-    "openssl",
     {
       "name": "vcpkg-cmake",
       "host": true,
@@ -17,8 +14,26 @@
     }
   ],
   "features": {
+    "crypto": {
+      "description": "Crypto support",
+      "dependencies": [
+        "openssl"
+      ]
+    },
+    "dbd-sqlite3": {
+      "description": "Build SQLite3 DBD driver",
+      "dependencies": [
+        "sqlite3"
+      ]
+    },
     "private-headers": {
       "description": "Install non-standard files required for building Apache httpd"
+    },
+    "xlate": {
+      "description": "Xlate support",
+      "dependencies": [
+        "libiconv"
+      ]
     }
   }
 }
