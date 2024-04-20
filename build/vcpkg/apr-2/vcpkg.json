@@ -21,7 +21,11 @@
     "crypto": {
       "description": "Crypto support",
       "dependencies": [
-        "openssl"
+        {
+          "name": "openssl",
+          "default-features": false,
+          "features": []
+        }
       ]
     },
     "dbd-sqlite3": {
