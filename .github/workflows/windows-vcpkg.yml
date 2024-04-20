@@ -12,6 +12,7 @@ jobs:
         triplet:
         - x64-windows
         - x64-windows-static
+        - x64-windows-static-md
         - x86-windows
         - x86-windows-static
         port:
