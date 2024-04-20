@@ -14,6 +14,11 @@ jobs:
         - x64-windows-static
         - x86-windows
         - x86-windows-static
+        port:
+        - apr-2
+        - apr-2[core]
+        - apr-2[minimal-build]
+        - apr-2[crypto, dbd-sqlite3, private-headers, xlate]
       fail-fast: false
     
     name: "${{ matrix.triplet }} on ${{ matrix.os }}"
@@ -36,4 +41,4 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Vcpkg Install
-      run: C:\vcpkg\vcpkg.exe install apr-2[minimal-build] --head --overlay-ports ${{ github.workspace }}\build\vcpkg --triplet ${{ matrix.triplet }} --debug --enforce-port-checks
+      run: C:\vcpkg\vcpkg.exe install ${{ matrix.port }} --head --overlay-ports ${{ github.workspace }}\build\vcpkg --triplet ${{ matrix.triplet }} --debug --enforce-port-checks
