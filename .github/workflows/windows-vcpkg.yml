@@ -18,7 +18,7 @@ jobs:
         - apr-2
         - apr-2[core]
         - apr-2[minimal-build]
-        - apr-2[crypto, dbd-sqlite3, private-headers, xlate]
+        - apr-2[crypto,dbd-sqlite3,private-headers,xlate]
       fail-fast: false
     
     name: "${{ matrix.port }}:${{ matrix.triplet }} on ${{ matrix.os }}"
