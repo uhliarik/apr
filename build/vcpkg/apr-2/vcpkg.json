@@ -34,6 +34,9 @@
         "sqlite3"
       ]
     },
+    "dbd-odbc": {
+      "description": "Build ODBC DBD driver"
+    },
     "private-headers": {
       "description": "Install non-standard files required for building Apache httpd"
     },
