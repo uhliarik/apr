@@ -73,6 +73,7 @@ OPTION(INSTALL_PDB          "Install .pdb files (if generated)"  ON)
 OPTION(APR_BUILD_TESTAPR    "Build the test suite"         ON)
 OPTION(APR_BUILD_SHARED     "Build shared libraries"       ON)
 OPTION(APR_BUILD_STATIC     "Build static libraries."      ON)
+OPTION(APR_MODULAR_DSO      "Use DSO build of modular components." ON)
 OPTION(TEST_STATIC_LIBS     "Test programs use APR static libraries instead of shared libraries?" OFF)
 
 IF(NOT APR_BUILD_SHARED AND NOT APR_BUILD_STATIC)
@@ -88,6 +89,10 @@ IF(NOT APU_USE_EXPAT AND NOT APU_USE_LIBXML2 AND NOT APU_USE_XMLLITE)
 ENDIF()
 IF(APU_USE_EXPAT AND APU_USE_LIBXML2)
   MESSAGE(FATAL_ERROR "Only one of Expat and LibXml2 can be selected")
+ENDIF()
+
+IF(APR_MODULAR_DSO AND NOT APR_BUILD_SHARED)
+  MESSAGE(FATAL_ERROR "APR_MODULAR_DSO requires APR_BUILD_SHARED.")
 ENDIF()
 
 IF(APU_HAVE_CRYPTO)
@@ -117,6 +122,7 @@ SET(apu_use_xmllite_10 0)
 SET(apu_have_iconv_10 0)
 SET(apu_have_odbc_10 0)
 SET(apu_have_sqlite3_10 0)
+SET(apr_have_modular_dso_10 0)
 
 IF(APR_HAVE_IPV6)
   SET(apr_have_ipv6_10 1)
@@ -146,6 +152,10 @@ IF(APU_HAVE_ODBC)
 ENDIF()
 IF(APU_HAVE_SQLITE3)
   SET(apu_have_sqlite3_10 1)
+ENDIF()
+
+IF(APR_MODULAR_DSO)
+  SET(apr_have_modular_dso_10 1)
 ENDIF()
 
 CONFIGURE_FILE(include/apr.hwc
@@ -420,6 +430,11 @@ SET(APR_SOURCES
   xml/apr_xml_xmllite.c
 )
 
+# Sources and libraries for APR builtin drivers. Used when APR_MODULAR_DSO=OFF.
+SET(APR_EXTRA_SOURCES)
+SET(APR_EXTRA_LIBRARIES)
+SET(APR_EXTRA_INCLUDE_DIRECTORIES)
+
 SET(APR_TEST_SUITES
   testargs
   testatomic
@@ -505,34 +520,59 @@ IF (MSVC)
   ADD_COMPILE_DEFINITIONS(_CRT_SECURE_NO_DEPRECATE _CRT_NONSTDC_NO_WARNINGS)
 ENDIF()
 
+IF(NOT APR_MODULAR_DSO AND APU_HAVE_CRYPTO)
+  IF(NOT OPENSSL_FOUND)
+    MESSAGE(FATAL_ERROR "Only OpenSSL-based crypto is currently implemented in the cmake build")
+  ENDIF()
+
+  LIST(APPEND APR_EXTRA_SOURCES crypto/apr_crypto_openssl.c)
+  LIST(APPEND APR_EXTRA_LIBRARIES ${OPENSSL_LIBRARIES})
+  LIST(APPEND APR_EXTRA_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE_DIR}")
+ENDIF()
+
+IF(NOT APR_MODULAR_DSO AND APU_HAVE_ODBC)
+  LIST(APPEND dbd_drivers odbc)
+
+  LIST(APPEND APR_EXTRA_SOURCES dbd/apr_dbd_odbc.c)
+  LIST(APPEND APR_EXTRA_LIBRARIES odbc32 odbccp32)
+ENDIF()
+
+IF(NOT APR_MODULAR_DSO AND APU_HAVE_SQLITE3)
+  LIST(APPEND dbd_drivers sqlite3)
+
+  LIST(APPEND APR_EXTRA_SOURCES dbd/apr_dbd_sqlite3.c)
+  LIST(APPEND APR_EXTRA_LIBRARIES ${SQLite3_LIBRARIES})
+  LIST(APPEND APR_EXTRA_INCLUDE_DIRECTORIES "${SQLite3_INCLUDE_DIRS}")
+ENDIF()
+
 # libapr-2 is shared, apr-2 is static
 IF (APR_BUILD_SHARED)
-  ADD_LIBRARY(${apr_libname} SHARED ${APR_SOURCES} ${APR_PUBLIC_HEADERS_GENERATED} libapr.rc)
+  ADD_LIBRARY(${apr_libname} SHARED ${APR_SOURCES} ${APR_EXTRA_SOURCES} ${APR_PUBLIC_HEADERS_GENERATED} libapr.rc)
   LIST(APPEND install_targets ${apr_libname})
   LIST(APPEND install_bin_pdb ${PROJECT_BINARY_DIR}/${apr_libname}.pdb)
   TARGET_LINK_LIBRARIES(${apr_libname}
-                        PRIVATE ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
+                        PRIVATE ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS} ${APR_EXTRA_LIBRARIES})
   TARGET_COMPILE_DEFINITIONS(${apr_libname}
-                             PRIVATE "APR_DECLARE_EXPORT;APR_HAVE_MODULAR_DSO=1"
+                             PRIVATE "APR_DECLARE_EXPORT;APR_HAVE_MODULAR_DSO=${apr_have_modular_dso_10}"
                              INTERFACE "APR_DECLARE_IMPORT")
   TARGET_INCLUDE_DIRECTORIES(${apr_libname}
-    PRIVATE ${APR_INCLUDE_DIRECTORIES} ${XMLLIB_INCLUDE_DIR} ${XLATE_INCLUDE_DIR}
+    PRIVATE ${APR_INCLUDE_DIRECTORIES} ${XMLLIB_INCLUDE_DIR} ${XLATE_INCLUDE_DIR} ${APR_EXTRA_INCLUDE_DIRECTORIES}
     INTERFACE $<INSTALL_INTERFACE:include/apr-2> ${APR_INCLUDE_DIRECTORIES}
   )
   ADD_DEPENDENCIES(${apr_libname} test_char_header)
 ENDIF()
 
 IF (APR_BUILD_STATIC)
-  ADD_LIBRARY(${apr_name} STATIC ${APR_SOURCES} ${APR_PUBLIC_HEADERS_GENERATED})
+  ADD_LIBRARY(${apr_name} STATIC ${APR_SOURCES} ${APR_EXTRA_SOURCES} ${APR_PUBLIC_HEADERS_GENERATED})
   LIST(APPEND install_targets ${apr_name})
   # no .pdb file generated for static libraries
   TARGET_LINK_LIBRARIES(${apr_name}
-                        PRIVATE ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS})
+                        PRIVATE ${XMLLIB_LIBRARIES} ${XLATE_LIBRARIES} ${APR_SYSTEM_LIBS} ${APR_EXTRA_LIBRARIES})
   TARGET_COMPILE_DEFINITIONS(${apr_name}
-                             PRIVATE "APR_DECLARE_STATIC;APR_HAVE_MODULAR_DSO=1"
+                             PRIVATE "APR_DECLARE_STATIC;APR_HAVE_MODULAR_DSO=${apr_have_modular_dso_10}"
                              INTERFACE "APR_DECLARE_STATIC")
   TARGET_INCLUDE_DIRECTORIES(${apr_name}
-    PRIVATE ${APR_INCLUDE_DIRECTORIES} ${XMLLIB_INCLUDE_DIR} ${XLATE_INCLUDE_DIR}
+    PRIVATE ${APR_INCLUDE_DIRECTORIES} ${XMLLIB_INCLUDE_DIR} ${XLATE_INCLUDE_DIR} ${APR_EXTRA_INCLUDE_DIRECTORIES}
     INTERFACE $<INSTALL_INTERFACE:include/apr-2> ${APR_INCLUDE_DIRECTORIES}
   )
   ADD_DEPENDENCIES(${apr_name} test_char_header)
@@ -557,7 +597,7 @@ IF (APR_BUILD_STATIC)
   )
 ENDIF()
 
-IF(APU_HAVE_CRYPTO)
+IF(APR_MODULAR_DSO AND APU_HAVE_CRYPTO)
   IF(NOT OPENSSL_FOUND)
     MESSAGE(FATAL_ERROR "Only OpenSSL-based crypto is currently implemented in the cmake build")
   ENDIF()
@@ -570,7 +610,7 @@ IF(APU_HAVE_CRYPTO)
                              PRIVATE "DLL_NAME=apr_crypto_openssl")
 ENDIF()
 
-IF(APU_HAVE_ODBC)
+IF(APR_MODULAR_DSO AND APU_HAVE_ODBC)
   ADD_LIBRARY(apr_dbd_odbc-2 SHARED dbd/apr_dbd_odbc.c libapr.rc)
   LIST(APPEND install_modules ${PROJECT_BINARY_DIR}/apr_dbd_odbc-2.dll)
   LIST(APPEND install_bin_pdb ${PROJECT_BINARY_DIR}/apr_dbd_odbc-2.pdb)
@@ -581,7 +621,7 @@ IF(APU_HAVE_ODBC)
                              PRIVATE "DLL_NAME=apr_dbd_odbc")
 ENDIF()
 
-IF(APU_HAVE_SQLITE3)
+IF(APR_MODULAR_DSO AND APU_HAVE_SQLITE3)
   ADD_LIBRARY(apr_dbd_sqlite3-2 SHARED dbd/apr_dbd_sqlite3.c libapr.rc)
   LIST(APPEND install_modules ${PROJECT_BINARY_DIR}/apr_dbd_sqlite3-2.dll)
   LIST(APPEND install_bin_pdb ${PROJECT_BINARY_DIR}/apr_dbd_sqlite3-2.pdb)
@@ -767,6 +807,7 @@ MESSAGE(STATUS "  Use XmlLite ..................... : ${APU_USE_XMLLITE}")
 MESSAGE(STATUS "  Have Crypto ..................... : ${APU_HAVE_CRYPTO}")
 MESSAGE(STATUS "  Have Iconv ...................... : ${APU_HAVE_ICONV}")
 MESSAGE(STATUS "  Library files for XML ........... : ${XMLLIB_LIBRARIES}")
+MESSAGE(STATUS "  DSO build of modular components.. : ${APR_MODULAR_DSO}")
 MESSAGE(STATUS "  Build shared libs ............... : ${APR_BUILD_SHARED}")
 MESSAGE(STATUS "  Build static libs ............... : ${APR_BUILD_STATIC}")
 MESSAGE(STATUS "  Build test suite ................ : ${APR_BUILD_TESTAPR}")
