@@ -723,6 +723,8 @@ IF(APR_BUILD_TESTAPR)
     ADD_EXECUTABLE(${proggie} ${sourcefile})
     TARGET_LINK_LIBRARIES(${proggie} ${whichapr})
     SET_TARGET_PROPERTIES(${proggie} PROPERTIES COMPILE_DEFINITIONS "BINPATH=$<TARGET_FILE_DIR:${proggie}>")
+
+    ADD_DEPENDENCIES(testall ${proggie})
   ENDFOREACH()
 
   # Add tests for programs that run by themselves with no arguments.
