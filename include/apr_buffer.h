@@ -73,13 +73,17 @@ typedef struct
         void *mem;
     } d;
 
-    /** size of the data. If positive, the data is of fixed size. If
-      * negative, the data is zero terminated and the absolute value
-      * represents the data length including terminating zero.
-      *
-      * we use apr_off_t to make it simple to detect overflow.
-      */
-    apr_off_t size;
+    /** is the data zero terminated */
+    unsigned int zero_terminated:1;
+
+    /** size of the data, excluding terminating zero */
+#if defined(SIZE_MAX) && SIZE_MAX == APR_UINT64_MAX
+    apr_size_t size:63;
+#elif defined(SIZE_MAX) && SIZE_MAX == APR_UINT32_MAX
+    apr_size_t size:31;
+#else
+#error sizeof size_t is neither 64 nor 32 bit (SIZE_MAX not defined)
+#endif
 
 } apr_buffer_t;
 
@@ -344,23 +348,6 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_cpy(apr_buffer_t *dst,
                                            __attribute__((nonnull(1)));
 
 /**
- * Compare two buffers for equality.
- *
- * Each buffer can be either a string or memory buffer.
- *
- * A string buffer and a memory buffer are considered equal if the length
- * excluding any trailing zero is equal, and the contents without the trailing
- * zero are the same.
- * @param dst The first buffer
- * @param src The second buffer
- * @return Positive, negative, or zero, depending on whether b1 is greater
- *         than, less than, or equal to b2.
- */
-APR_DECLARE(int) apr_buffer_cmp(const apr_buffer_t *dst,
-                                const apr_buffer_t *src)
-                                __attribute__((nonnull(1,2)));
-
-/**
  * Compare two possibly NULL buffers for equality.
  *
  * Each buffer can be either a string or memory buffer, or NULL.
@@ -372,11 +359,11 @@ APR_DECLARE(int) apr_buffer_cmp(const apr_buffer_t *dst,
  * zero are the same.
  * @param dst The first buffer
  * @param src The second buffer
- * @return Positive, negative, or zero, depending on whether b1 is greater
- *         than, less than, or equal to b2.
+ * @return Positive, negative, or zero, depending on whether src is greater
+ *         than, less than, or equal to dst.
  */
-APR_DECLARE(int) apr_buffer_ncmp(const apr_buffer_t *dst,
-                                 const apr_buffer_t *src);
+APR_DECLARE(int) apr_buffer_cmp(const apr_buffer_t *dst,
+                                const apr_buffer_t *src);
 
 /**
  * Concatenate multiple buffers and return a string.

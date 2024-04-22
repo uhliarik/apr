@@ -28,7 +28,7 @@
 #include "apr_strings.h"
 #include "apr_private.h"
 
-#define APR_BUFFER_MAX APR_SIZE_MAX/2
+#define APR_BUFFER_MAX (APR_SIZE_MAX/2-1)
 
 APR_DECLARE(apr_status_t) apr_buffer_mem_set(apr_buffer_t *buf,
                                              void *mem, apr_size_t len)
@@ -40,6 +40,7 @@ APR_DECLARE(apr_status_t) apr_buffer_mem_set(apr_buffer_t *buf,
 
     buf->d.mem = mem;
     buf->size = len;
+    buf->zero_terminated = 0;
 
     return APR_SUCCESS;
 }
@@ -58,6 +59,7 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_mem_make(apr_pool_t *pool,
     if (buf) {
         buf->d.mem = mem;
         buf->size = len;
+        buf->zero_terminated = 0;
     }
 
     return buf;
@@ -74,21 +76,25 @@ APR_DECLARE(apr_status_t) apr_buffer_str_set(apr_buffer_t *buf,
     if (!str) {
         buf->d.str = NULL;
         buf->size = 0;
+        buf->zero_terminated = 0;
     }
     else if (len < 0) {
         apr_size_t slen = strlen(str);
         if (slen <= APR_BUFFER_MAX) {
             buf->d.str = str;
-            buf->size = -(apr_off_t)(slen + 1);
+            buf->size = slen;
+            buf->zero_terminated = 1;
         }
         else {
             buf->d.str = NULL;
             buf->size = 0;
+            buf->zero_terminated = 0;
         }
     }
     else {
         buf->d.str = str;
-        buf->size = -(len + 1);
+        buf->size = len;
+        buf->zero_terminated = 1;
     }
 
     return APR_SUCCESS;
@@ -100,25 +106,25 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_str_make(apr_pool_t *pool,
     apr_buffer_t *buf;
     apr_int64_t size;
     apr_size_t slen;
+    unsigned int zero_terminated;
 
     if (!str) {
         str = NULL;
         size = 0;
+        zero_terminated = 0;
     }
-    if (APR_BUFFER_STRING == len && !str[0]) {
-        size = len;
-    }
-    else if (len < 0) {
+    if (APR_BUFFER_STRING == len) {
         slen = strlen(str);
         if (slen <= APR_BUFFER_MAX) {
-            size = -(apr_off_t)(slen + 1);
+            size = slen;
+            zero_terminated = 1;
         }
         else {
             return NULL;
         }
     }
     else {
-        size = -(len + 1);
+        size = (apr_size_t)len;
     }
 
     buf = apr_palloc(pool, sizeof(apr_buffer_t));
@@ -126,6 +132,7 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_str_make(apr_pool_t *pool,
     if (buf) {
         buf->d.str = str;
         buf->size = size;
+        buf->zero_terminated = zero_terminated;
     }
 
     return buf;
@@ -138,22 +145,12 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_null_make(apr_pool_t *pool)
 
 APR_DECLARE(apr_size_t) apr_buffer_len(const apr_buffer_t *buf)
 {
-    if (buf->size < 0) {
-        return (apr_size_t)((-buf->size) - 1);
-    }
-    else {
-        return (apr_size_t)buf->size;
-    }
+    return buf->size;
 }
 
 APR_DECLARE(apr_size_t) apr_buffer_allocated(const apr_buffer_t *buf)
 {   
-    if (buf->size < 0) {
-        return (apr_size_t)((-buf->size));
-    }
-    else {
-        return (apr_size_t)buf->size;
-    }
+    return buf->size + buf->zero_terminated;
 }
 
 APR_DECLARE(int) apr_buffer_is_null(const apr_buffer_t *buf)
@@ -168,17 +165,12 @@ APR_DECLARE(int) apr_buffer_is_null(const apr_buffer_t *buf)
 
 APR_DECLARE(int) apr_buffer_is_str(const apr_buffer_t *buf)
 {
-    if (buf->size < 0) {
-        return 1;
-    }
-    else {  
-        return 0;                         
-    }
+    return buf->zero_terminated;
 }
 
 APR_DECLARE(char *) apr_buffer_str(const apr_buffer_t *buf)
 {
-    if (buf->size < 0) {
+    if (buf->zero_terminated) {
         return buf->d.str;
     }
     else {  
@@ -188,12 +180,7 @@ APR_DECLARE(char *) apr_buffer_str(const apr_buffer_t *buf)
 
 APR_DECLARE(char *) apr_buffer_pstrdup(apr_pool_t *pool, const apr_buffer_t *buf)
 {
-    if (buf->size < 0) {
-        return apr_pstrmemdup(pool, buf->d.str, (apr_size_t)(-(buf->size + 1)));
-    }
-    else {
-        return apr_pstrmemdup(pool, buf->d.str, (apr_size_t)buf->size);
-    }
+    return apr_pstrmemdup(pool, buf->d.str, buf->size);
 }
 
 APR_DECLARE(void *) apr_buffer_mem(const apr_buffer_t *buf, apr_size_t *size)
@@ -227,11 +214,12 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_arraydup(const apr_buffer_t *src,
     for (i = 0; i < nelts; i++) {
 
         /* absolute value is size of mem buffer including optional terminating zero */
-        apr_size_t size = src->size < 0 ? -src->size : src->size;
+        apr_size_t size = src->size + src->zero_terminated;
 
         void *mem = alloc(ctx, size);
         memcpy(mem, src->d.mem, size);
 
+        dst->zero_terminated = src->zero_terminated;
         dst->size = src->size;
         dst->d.mem = mem;
 
@@ -256,22 +244,25 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_cpy(apr_buffer_t *dst,
 
         dst->d.mem = NULL;
         dst->size = 0;
+        dst->zero_terminated = 0;
 
     }
     else if (!alloc) {
 
         dst->d.mem = src->d.mem;
         dst->size = src->size;
-    
+        dst->zero_terminated = src->zero_terminated;
+
     }
     else {
 
         /* absolute value is size of mem buffer including optional terminating zero */
-        apr_size_t size = src->size < 0 ? -src->size : src->size;
+        apr_size_t size = src->size + src->zero_terminated;
 
         void *mem = alloc(ctx, size);
         memcpy(mem, src->d.mem, size);
 
+        dst->zero_terminated = src->zero_terminated;
         dst->size = src->size;
         dst->d.mem = mem;
 
@@ -280,33 +271,7 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_cpy(apr_buffer_t *dst,
     return dst;
 }
 
-
 APR_DECLARE(int) apr_buffer_cmp(const apr_buffer_t *src,
-                                const apr_buffer_t *dst)
-{
-    apr_size_t slen = apr_buffer_len(src);
-    apr_size_t dlen = apr_buffer_len(dst);
-   
-    if (slen != dlen) {
-        return slen < dlen ? -1 : 1;
-    }
-    else if (src->d.mem == dst->d.mem) {
-        /* identical data or both NULL */
-        return 0;
-    }
-    else if (!src->d.mem) {
-        return -1;
-    }
-    else if (!dst->d.mem) {
-        return 1;
-    }
-    else {
-        return memcmp(src->d.mem, dst->d.mem, slen);
-    }
-}
-
-
-APR_DECLARE(int) apr_buffer_ncmp(const apr_buffer_t *src,
                                  const apr_buffer_t *dst)
 {
     if (!src || !src->d.mem) {
@@ -322,7 +287,17 @@ APR_DECLARE(int) apr_buffer_ncmp(const apr_buffer_t *src,
             return 1;
         }
         else {
-            return apr_buffer_cmp(src, dst);
+
+            apr_size_t slen = apr_buffer_len(src);
+            apr_size_t dlen = apr_buffer_len(dst);
+
+            if (slen != dlen) {
+                return slen < dlen ? -1 : 1;
+            }
+            else {
+                return memcmp(src->d.mem, dst->d.mem, slen);
+            }
+
         }
     }
 }
@@ -344,17 +319,17 @@ APR_DECLARE(char *) apr_buffer_pstrncat(apr_pool_t *p, const apr_buffer_t *buf,
             size += seplen;
         }
 
-        if (src->size < 0) {
-            size += (apr_size_t)(-src->size) - 1;
+        if (src->zero_terminated) {
+            size += src->size;
         }
         else {
             if (APR_BUFFER_NONE == flags) {
-                size += (apr_size_t)src->size;
+                size += src->size;
             }
             else if (APR_BUFFER_BASE64 == flags) {
                 apr_size_t b64len;
 
-                if (APR_SUCCESS != apr_encode_base64(NULL, src->d.mem, (apr_size_t)src->size,
+                if (APR_SUCCESS != apr_encode_base64(NULL, src->d.mem, src->size,
                                                      APR_ENCODE_NONE, &b64len)) {
                     return NULL;
                 }
@@ -379,19 +354,19 @@ APR_DECLARE(char *) apr_buffer_pstrncat(apr_pool_t *p, const apr_buffer_t *buf,
             strncpy(dst, sep, seplen);
             dst += seplen;
         }
-        
-        if (src->size < 0) {
-            strncpy(dst, src->d.str, (apr_size_t)((-src->size) - 1));
-            dst += (-src->size) - 1;
+
+        if (src->zero_terminated) {
+            strncpy(dst, src->d.str, src->size);
+            dst += src->size;
         }
         else {
             if (APR_BUFFER_NONE == flags) {
-                memcpy(dst, src->d.mem, (apr_size_t)src->size);
+                memcpy(dst, src->d.mem, src->size);
             }
             else if (APR_BUFFER_BASE64 == flags) {
                 apr_size_t b64len;
 
-                if (APR_SUCCESS != apr_encode_base64(dst, src->d.mem, (apr_size_t)src->size,
+                if (APR_SUCCESS != apr_encode_base64(dst, src->d.mem, src->size,
                                                      APR_ENCODE_NONE, &b64len)) {
                     return NULL;
                 }

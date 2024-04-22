@@ -179,29 +179,29 @@ static void test_compare_buffers(abts_case *tc, void *data)
     small = NULL;
     large = NULL;
     ABTS_ASSERT(tc, "NULL equals NULL",
-                    !apr_buffer_ncmp(small, large));
+                    !apr_buffer_cmp(small, large));
 
     small = apr_buffer_null_make(pool);
     ABTS_ASSERT(tc, "null buffer equals NULL",
-                    !apr_buffer_ncmp(small, large));
+                    !apr_buffer_cmp(small, large));
 
     large = apr_buffer_null_make(pool);
     ABTS_ASSERT(tc, "null buffer equals null buffer",
-                    !apr_buffer_ncmp(small, large));
+                    !apr_buffer_cmp(small, large));
 
     small = NULL;
     ABTS_ASSERT(tc, "NULL equals null buffer",
-                    !apr_buffer_ncmp(small, large));
+                    !apr_buffer_cmp(small, large));
 
     small = apr_buffer_str_make(pool, same, APR_BUFFER_STRING);
     large = apr_buffer_str_make(pool, same, APR_BUFFER_STRING);
     ABTS_ASSERT(tc, "pointer equals same pointer",
-                    !apr_buffer_ncmp(small, large));
+                    !apr_buffer_cmp(small, large));
 
     small = apr_buffer_str_make(pool, "same", APR_BUFFER_STRING);
     large = apr_buffer_str_make(pool, "same", APR_BUFFER_STRING);
     ABTS_ASSERT(tc, "'same' equals 'same'",
-                    !apr_buffer_ncmp(small, large));
+                    !apr_buffer_cmp(small, large));
 
     small = apr_buffer_str_make(pool, "short", APR_BUFFER_STRING);
     large = apr_buffer_str_make(pool, "l o n g", APR_BUFFER_STRING);
