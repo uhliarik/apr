@@ -351,12 +351,12 @@ APR_DECLARE(char *) apr_buffer_pstrncat(apr_pool_t *p, const apr_buffer_t *buf,
     for (i = 0; i < nelts; i++) {
 
         if (i > 0 && sep) {
-            strncpy(dst, sep, seplen);
+            memcpy(dst, sep, seplen);
             dst += seplen;
         }
 
         if (src->zero_terminated) {
-            strncpy(dst, src->d.str, src->size);
+            memcpy(dst, src->d.str, src->size);
             dst += src->size;
         }
         else {
