@@ -54,7 +54,7 @@ extern "C" {
 /**
  * Perform no encoding on memory buffers during apr_buffer_pstrcat().
  */
-#define APR_BUFFER_NONE    0
+#define APR_BUFFER_PLAIN    0
 /**
  * Perform base64 encoding on memory buffers during apr_buffer_pstrcat().
  */

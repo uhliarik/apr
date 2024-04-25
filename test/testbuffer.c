@@ -108,6 +108,10 @@ static void test_string_buffer(abts_case *tc, void *data)
     ABTS_ASSERT(tc, "string buffer has wrong allocation",
                     apr_buffer_allocated(sb) == strlen(test_string) + 1);
 
+    ABTS_ASSERT(tc, "string buffer accepted bogus non-zero terminated string",
+                    APR_EINVAL == apr_buffer_str_set(sb, (char *)test_memory,
+                                                     sizeof(test_memory) - 1));
+
     apr_pool_destroy(pool);
 }
 

@@ -28,7 +28,7 @@
 #include "apr_strings.h"
 #include "apr_private.h"
 
-#define APR_BUFFER_MAX (APR_SIZE_MAX/2-1)
+#define APR_BUFFER_MAX (APR_SIZE_MAX/2)
 
 APR_DECLARE(apr_status_t) apr_buffer_mem_set(apr_buffer_t *buf,
                                              void *mem, apr_size_t len)
@@ -92,6 +92,9 @@ APR_DECLARE(apr_status_t) apr_buffer_str_set(apr_buffer_t *buf,
         }
     }
     else {
+        if (str[len]) {
+            return APR_EINVAL;
+        }
         buf->d.str = str;
         buf->size = len;
         buf->zero_terminated = 1;
@@ -122,6 +125,9 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_str_make(apr_pool_t *pool,
         else {
             return NULL;
         }
+    }
+    else if (str[len]) {
+        return NULL;
     }
     else {
         size = (apr_size_t)len;
@@ -210,6 +216,10 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_arraydup(const apr_buffer_t *src,
     apr_buffer_t *dst = alloc(ctx, nelts * sizeof(apr_buffer_t));
     apr_buffer_t *d = dst;
 
+    if (!dst) {
+        return NULL;
+    }
+
     int i;
     for (i = 0; i < nelts; i++) {
 
@@ -217,11 +227,21 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_arraydup(const apr_buffer_t *src,
         apr_size_t size = src->size + src->zero_terminated;
 
         void *mem = alloc(ctx, size);
-        memcpy(mem, src->d.mem, size);
 
-        dst->zero_terminated = src->zero_terminated;
-        dst->size = src->size;
-        dst->d.mem = mem;
+        if (mem) {
+
+            memcpy(mem, src->d.mem, size);
+
+            dst->zero_terminated = src->zero_terminated;
+            dst->size = src->size;
+            dst->d.mem = mem;
+
+        }
+        else {
+            dst->zero_terminated = 0;
+            dst->size = 0;
+            dst->d.mem = NULL;
+        }
 
         src++;
         dst++;
@@ -275,12 +295,7 @@ APR_DECLARE(int) apr_buffer_cmp(const apr_buffer_t *src,
                                  const apr_buffer_t *dst)
 {
     if (!src || !src->d.mem) {
-        if (!dst || !dst->d.mem) {
-            return 0;
-        }
-        else {
-            return -1;
-        }
+        return (!dst || !dst->d.mem) ? 0 : -1;
     }
     else {
         if (!dst || !dst->d.mem) {
@@ -323,7 +338,7 @@ APR_DECLARE(char *) apr_buffer_pstrncat(apr_pool_t *p, const apr_buffer_t *buf,
             size += src->size;
         }
         else {
-            if (APR_BUFFER_NONE == flags) {
+            if (APR_BUFFER_PLAIN == flags) {
                 size += src->size;
             }
             else if (APR_BUFFER_BASE64 == flags) {
@@ -360,7 +375,7 @@ APR_DECLARE(char *) apr_buffer_pstrncat(apr_pool_t *p, const apr_buffer_t *buf,
             dst += src->size;
         }
         else {
-            if (APR_BUFFER_NONE == flags) {
+            if (APR_BUFFER_PLAIN == flags) {
                 memcpy(dst, src->d.mem, src->size);
             }
             else if (APR_BUFFER_BASE64 == flags) {
