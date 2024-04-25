@@ -44,9 +44,9 @@ extern "C" {
 #endif
 
 /**
- * When passing a string to apr_buffer_str_make, this value can be
- * passed to indicate a string with unknown length, and have apr_buffer_str_make
- * compute the length automatically.
+ * When passing a string to apr_buffer_str_create or apr_buffer_str_set, this
+ * value can be passed to indicate a string with unknown length, and have
+ * apr_buffer_str_create and apr_buffer_str_set compute the length automatically.
  */
 #define APR_BUFFER_STRING     (-1)
 
@@ -102,20 +102,22 @@ APR_DECLARE(apr_status_t) apr_buffer_mem_set(apr_buffer_t *buf,
 
 
 /**
- * Make a apr_buffer_t containing a non zero terminated memory.
+ * Create a apr_buffer_t containing non zero terminated memory.
  *
  * The buffer structure is allocated from the pool, while the contents are
  * stored as is. It is the responsibility of the caller to ensure the
  * contents have a lifetime as long as the pool.
+ * @param mb The memory buffer returned
  * @param pool The pool to allocate from
  * @param mem The memory to assign to the buffer
  * @param len The length of the memory
- * @return The apr_buffer_t we just made. Returns NULL if we could not
- *         allocate enough memory, or if len overflows.
+ * @return Returns APR_ENOMEM if we could not allocate enough memory,
+ *         APR_EINVAL if len overflows, otherwise APR_SUCCESS.
  */
-APR_DECLARE(apr_buffer_t *) apr_buffer_mem_make(apr_pool_t *pool,
+APR_DECLARE(apr_status_t) apr_buffer_mem_create(apr_buffer_t **mb,
+                                                apr_pool_t *pool,
                                                 void *mem, apr_size_t len)
-                                                __attribute__((nonnull(1)));
+                                                __attribute__((nonnull(1,2)));
 
 /**
  * Set a apr_buffer_t with a zero terminated string.
@@ -131,32 +133,36 @@ APR_DECLARE(apr_status_t) apr_buffer_str_set(apr_buffer_t *buf,
                                              __attribute__((nonnull(1)));
 
 /**
- * Make a apr_buffer_t containing a zero terminated string.
+ * Create a apr_buffer_t containing a zero terminated string.
  *
  * The buffer structure is allocated from the pool, while the contents are
  * stored as is. It is the responsibility of the caller to ensure the
  * contents have a lifetime as long as the pool.
+ * @param sb The string buffer returned
  * @param pool The pool to allocate from.
  * @param str The string to assign to the buffer.
  * @param len The length of the string, or APR_BUFFER_STRING to have the length
  * calculated.
- * @return The apr_buffer_t we just made. Returns NULL if we could not
- *         allocate memory, or if len overflows.
+ * @return Returns APR_ENOMEM if we could not allocate enough memory,
+ *         APR_EINVAL if len overflows, otherwise APR_SUCCESS.
  */
-APR_DECLARE(apr_buffer_t *) apr_buffer_str_make(apr_pool_t *pool,
+APR_DECLARE(apr_status_t) apr_buffer_str_create(apr_buffer_t **sb,
+                                                apr_pool_t *pool,
                                                 char *str, apr_ssize_t len)
                                                 __attribute__((nonnull(1)));
 
 /**
- * Make a apr_buffer_t containing a NULL payload.
+ * Create a apr_buffer_t containing a NULL payload.
  *
  * The buffer structure is allocated from the pool.
+ * @param nb The null buffer returned
  * @param pool The pool to allocate from.
- * @return The apr_buffer_t we just made. Returns NULL if we could not
- *         allocate memory.
+ * @return Returns APR_ENOMEM if we could not allocate enough memory,
+ *         otherwise APR_SUCCESS.
  */
-APR_DECLARE(apr_buffer_t *) apr_buffer_null_make(apr_pool_t *pool)
-                                                __attribute__((nonnull(1)));
+APR_DECLARE(apr_status_t) apr_buffer_null_create(apr_buffer_t **nb,
+                                                 apr_pool_t *pool)
+                                                 __attribute__((nonnull(1)));
 
 
 /**
@@ -295,16 +301,20 @@ typedef void *(*apr_buffer_alloc)(void *ctx, apr_size_t size);
  *
  * Use this function to copy buffers, and the contents of the buffers, into and
  * out of a cache.
- * @param buf The string/memory buffer.
+ * @param out The duplicated buffer array. If APR_ENOMEM is returned the
+ * array may be partially duplicated, it is up to the caller to free any
+ * memory allocated, and to pass zeroed buffers if needed.
+ * @param in The string/memory buffer.
  * @param alloc The function callback to allocate memory for the buffer
  * @param ctx Context to pass to the callback function
  * @param nelts Number of buffers to duplicate
- * @return The array of duplicated buffers.
+ * @return APR_ENONMEM if the alloc function returned NULL, otherwise APR_SUCCESS
  */
-APR_DECLARE(apr_buffer_t *) apr_buffer_arraydup(const apr_buffer_t *buf,
-                                                apr_buffer_alloc alloc, void *ctx,
-                                                int nelts)
-                                                __attribute__((nonnull(1,2)));
+APR_DECLARE(apr_status_t) apr_buffer_arraydup(apr_buffer_t **out,
+                                              const apr_buffer_t *in,
+                                              apr_buffer_alloc alloc, void *ctx,
+                                              int nelts)
+                                              __attribute__((nonnull(1,2)));
 
 /**
  * Return a copy of a string/memory buffer.
@@ -315,14 +325,18 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_arraydup(const apr_buffer_t *buf,
  * Use this function to copy a buffer, and the content of the buffer, into and
  * out of a cache.
  *
- * @param buf The string/memory buffer.
+ * @param out The duplicated buffer. If APR_ENOMEM is returned the buffer may
+ * be partially duplicated, it is up to the caller to free any memory
+ * allocated, and to pass zeroed buffers if needed.
+ * @param in The string/memory buffer.
  * @param alloc The function callback to allocate memory for the buffer
  * @param ctx Context to pass to the callback function
- * @return The duplicated buffer.
+ * @return APR_ENONMEM if the alloc function returned NULL, otherwise APR_SUCCESS
  */
-APR_DECLARE(apr_buffer_t *) apr_buffer_dup(const apr_buffer_t *buf,
-                                           apr_buffer_alloc alloc, void *ctx)
-                                           __attribute__((nonnull(1,2)));
+APR_DECLARE(apr_status_t) apr_buffer_dup(apr_buffer_t **out,
+                                         const apr_buffer_t *in,
+                                         apr_buffer_alloc alloc, void *ctx)
+                                         __attribute__((nonnull(1,2)));
 
 /**
  * Copy the contents a buffer into another buffer.

@@ -45,33 +45,36 @@ APR_DECLARE(apr_status_t) apr_buffer_mem_set(apr_buffer_t *buf,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_buffer_t *) apr_buffer_mem_make(apr_pool_t *pool,
+APR_DECLARE(apr_status_t) apr_buffer_mem_create(apr_buffer_t **mb,
+                                                apr_pool_t *pool,
                                                 void *mem, apr_size_t len)
 {
     apr_buffer_t *buf;
 
     if (len > APR_BUFFER_MAX) {
-        return NULL;
+        return APR_EINVAL;
     }
 
     buf = apr_palloc(pool, sizeof(apr_buffer_t));
 
     if (buf) {
+
         buf->d.mem = mem;
         buf->size = len;
         buf->zero_terminated = 0;
+
+        *mb = buf;
+    }
+    else {
+        return APR_ENOMEM;
     }
 
-    return buf;
+    return APR_SUCCESS;
 }
 
 APR_DECLARE(apr_status_t) apr_buffer_str_set(apr_buffer_t *buf,
                                              char *str, apr_ssize_t len)
 {
-
-    if (len > APR_BUFFER_MAX) {
-        return APR_EINVAL;
-    }
 
     if (!str) {
         buf->d.str = NULL;
@@ -86,9 +89,7 @@ APR_DECLARE(apr_status_t) apr_buffer_str_set(apr_buffer_t *buf,
             buf->zero_terminated = 1;
         }
         else {
-            buf->d.str = NULL;
-            buf->size = 0;
-            buf->zero_terminated = 0;
+            return APR_EINVAL;
         }
     }
     else {
@@ -103,7 +104,8 @@ APR_DECLARE(apr_status_t) apr_buffer_str_set(apr_buffer_t *buf,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_buffer_t *) apr_buffer_str_make(apr_pool_t *pool,
+APR_DECLARE(apr_status_t) apr_buffer_str_create(apr_buffer_t **sb,
+                                                apr_pool_t *pool,
                                                 char *str, apr_ssize_t len)
 {
     apr_buffer_t *buf;
@@ -123,11 +125,11 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_str_make(apr_pool_t *pool,
             zero_terminated = 1;
         }
         else {
-            return NULL;
+            return APR_EINVAL;
         }
     }
     else if (str[len]) {
-        return NULL;
+        return APR_EINVAL;
     }
     else {
         size = (apr_size_t)len;
@@ -139,14 +141,30 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_str_make(apr_pool_t *pool,
         buf->d.str = str;
         buf->size = size;
         buf->zero_terminated = zero_terminated;
+
+        *sb = buf;
+    }
+    else {
+        return APR_ENOMEM;
     }
 
-    return buf;
+    return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_buffer_t *) apr_buffer_null_make(apr_pool_t *pool)
+APR_DECLARE(apr_status_t) apr_buffer_null_create(apr_buffer_t **nb,
+                                                 apr_pool_t *pool)
 {
-    return apr_pcalloc(pool, sizeof(apr_buffer_t));
+    apr_buffer_t *buf;
+
+    buf = apr_pcalloc(pool, sizeof(apr_buffer_t));
+
+    if (!buf) {
+        return APR_ENOMEM;
+    }
+
+    *nb = buf;
+
+    return APR_SUCCESS;
 }
 
 APR_DECLARE(apr_size_t) apr_buffer_len(const apr_buffer_t *buf)
@@ -209,15 +227,18 @@ APR_DECLARE(void *) apr_buffer_pmemdup(apr_pool_t *pool, const apr_buffer_t *buf
     return apr_pmemdup(pool, buf->d.mem, len);
 }
 
-APR_DECLARE(apr_buffer_t *) apr_buffer_arraydup(const apr_buffer_t *src,
-                                                apr_buffer_alloc alloc, void *ctx,
-                                                int nelts)
+APR_DECLARE(apr_status_t) apr_buffer_arraydup(apr_buffer_t **out,
+                                              const apr_buffer_t *in,
+                                              apr_buffer_alloc alloc, void *ctx,
+                                              int nelts)
 {
     apr_buffer_t *dst = alloc(ctx, nelts * sizeof(apr_buffer_t));
-    apr_buffer_t *d = dst;
+    const apr_buffer_t *src = in;
+
+    *out = dst;
 
     if (!dst) {
-        return NULL;
+        return APR_ENOMEM;
     }
 
     int i;
@@ -228,32 +249,28 @@ APR_DECLARE(apr_buffer_t *) apr_buffer_arraydup(const apr_buffer_t *src,
 
         void *mem = alloc(ctx, size);
 
-        if (mem) {
-
-            memcpy(mem, src->d.mem, size);
-
-            dst->zero_terminated = src->zero_terminated;
-            dst->size = src->size;
-            dst->d.mem = mem;
-
+        if (!mem) {
+            return APR_ENOMEM;
         }
-        else {
-            dst->zero_terminated = 0;
-            dst->size = 0;
-            dst->d.mem = NULL;
-        }
+
+        memcpy(mem, src->d.mem, size);
+
+        dst->zero_terminated = src->zero_terminated;
+        dst->size = src->size;
+        dst->d.mem = mem;
 
         src++;
         dst++;
     }
 
-    return d;
+    return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_buffer_t *) apr_buffer_dup(const apr_buffer_t *buf,
-                                           apr_buffer_alloc alloc, void *ctx)
+APR_DECLARE(apr_status_t) apr_buffer_dup(apr_buffer_t **out,
+                                         const apr_buffer_t *in,
+                                         apr_buffer_alloc alloc, void *ctx)
 {
-    return apr_buffer_arraydup(buf, alloc, ctx, 1);
+    return apr_buffer_arraydup(out, in, alloc, ctx, 1);
 }
 
 APR_DECLARE(apr_buffer_t *) apr_buffer_cpy(apr_buffer_t *dst,

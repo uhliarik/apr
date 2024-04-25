@@ -32,9 +32,11 @@ static void test_memory_buffer(abts_case *tc, void *data)
 
     apr_pool_create(&pool, p); 
 
-    mb = apr_buffer_mem_make(pool, test_memory, sizeof(test_memory));
+    ABTS_ASSERT(tc, "mem_create was not created",
+                    APR_SUCCESS == apr_buffer_mem_create(&mb, pool, test_memory,
+                                                         sizeof(test_memory)));
 
-    ABTS_ASSERT(tc, "mem_make stored wrong data",
+    ABTS_ASSERT(tc, "mem_create stored wrong data",
                     memcmp(test_memory, mb->d.mem, sizeof(test_memory)) == 0);
 
     ABTS_ASSERT(tc, "memory buffer is NULL",
@@ -77,21 +79,23 @@ static void test_string_buffer(abts_case *tc, void *data)
 
     apr_pool_create(&pool, p); 
 
-    sb = apr_buffer_str_make(pool, test_string, APR_BUFFER_STRING);
+    ABTS_ASSERT(tc, "str_create was not created",
+                    APR_SUCCESS == apr_buffer_str_create(&sb, pool, test_string,
+                                                         APR_BUFFER_STRING));
 
-    ABTS_ASSERT(tc, "str_make stored wrong data",
+    ABTS_ASSERT(tc, "str_create stored wrong data",
              strncmp(test_string, sb->d.str, strlen(test_string)) == 0);
 
-    ABTS_ASSERT(tc, "str_make's buffer is NULL",
+    ABTS_ASSERT(tc, "str_create's buffer is NULL",
                     !apr_buffer_is_null(sb));
 
-    ABTS_ASSERT(tc, "str_make's buffer is not a string",
+    ABTS_ASSERT(tc, "str_create's buffer is not a string",
                     apr_buffer_is_str(sb));
 
-    ABTS_ASSERT(tc, "str_make's buffer didn't return a string",
+    ABTS_ASSERT(tc, "str_create's buffer didn't return a string",
                     apr_buffer_str(sb) != NULL);
 
-    ABTS_ASSERT(tc, "str_make's buffer returned memory",
+    ABTS_ASSERT(tc, "str_create's buffer returned memory",
                     apr_buffer_mem(sb, NULL) != NULL);
 
     str = apr_buffer_pstrdup(pool, sb);
@@ -111,6 +115,42 @@ static void test_string_buffer(abts_case *tc, void *data)
     ABTS_ASSERT(tc, "string buffer accepted bogus non-zero terminated string",
                     APR_EINVAL == apr_buffer_str_set(sb, (char *)test_memory,
                                                      sizeof(test_memory) - 1));
+
+    apr_pool_destroy(pool);
+}
+
+static void test_null_buffer(abts_case *tc, void *data)
+{
+    apr_pool_t *pool;
+    apr_buffer_t *nb;
+
+    apr_pool_create(&pool, p); 
+
+    ABTS_ASSERT(tc, "null_create was not created",
+                    APR_SUCCESS == apr_buffer_null_create(&nb, pool));
+
+    ABTS_ASSERT(tc, "null buffer isn't NULL",
+                    apr_buffer_is_null(nb));
+
+    apr_buffer_str_set(nb, test_string, strlen(test_string));
+
+    ABTS_ASSERT(tc, "string buffer is NULL",
+                    !apr_buffer_is_null(nb));
+
+    apr_buffer_mem_set(nb, test_memory, sizeof(test_memory));
+
+    ABTS_ASSERT(tc, "memory buffer is NULL",
+                    !apr_buffer_is_null(nb));
+
+    apr_buffer_str_set(nb, NULL, 0);
+
+    ABTS_ASSERT(tc, "null buffer isn't NULL",
+                    apr_buffer_is_null(nb));
+
+    apr_buffer_mem_set(nb, NULL, 0);
+
+    ABTS_ASSERT(tc, "null buffer isn't NULL",
+                    apr_buffer_is_null(nb));
 
     apr_pool_destroy(pool);
 }
@@ -143,7 +183,7 @@ static void test_buffers(abts_case *tc, void *data)
 
     /* duplicate the source buffers, allocating memory from a pool */
     vals = apr_array_make(pool, 2, sizeof(apr_buffer_t));
-    vals->elts = (char *)apr_buffer_arraydup(src, test_buffers_palloc, pool, 2);
+    apr_buffer_arraydup((apr_buffer_t **)(&vals->elts), src, test_buffers_palloc, pool, 2);
     vals->nelts = 2;
 
     dst = apr_array_pop(vals);
@@ -185,37 +225,36 @@ static void test_compare_buffers(abts_case *tc, void *data)
     ABTS_ASSERT(tc, "NULL equals NULL",
                     !apr_buffer_cmp(small, large));
 
-    small = apr_buffer_null_make(pool);
+    apr_buffer_null_create(&small, pool);
     ABTS_ASSERT(tc, "null buffer equals NULL",
                     !apr_buffer_cmp(small, large));
 
-    large = apr_buffer_null_make(pool);
+    ABTS_ASSERT(tc, "NULL equals null buffer",
+                    !apr_buffer_cmp(large, small));
+
+    apr_buffer_null_create(&large, pool);
     ABTS_ASSERT(tc, "null buffer equals null buffer",
                     !apr_buffer_cmp(small, large));
 
-    small = NULL;
-    ABTS_ASSERT(tc, "NULL equals null buffer",
-                    !apr_buffer_cmp(small, large));
-
-    small = apr_buffer_str_make(pool, same, APR_BUFFER_STRING);
-    large = apr_buffer_str_make(pool, same, APR_BUFFER_STRING);
+    apr_buffer_str_set(small, same, APR_BUFFER_STRING);
+    apr_buffer_str_set(large, same, APR_BUFFER_STRING);
     ABTS_ASSERT(tc, "pointer equals same pointer",
                     !apr_buffer_cmp(small, large));
 
-    small = apr_buffer_str_make(pool, "same", APR_BUFFER_STRING);
-    large = apr_buffer_str_make(pool, "same", APR_BUFFER_STRING);
+    apr_buffer_str_set(small, "same", APR_BUFFER_STRING);
+    apr_buffer_str_set(large, "same", APR_BUFFER_STRING);
     ABTS_ASSERT(tc, "'same' equals 'same'",
                     !apr_buffer_cmp(small, large));
 
-    small = apr_buffer_str_make(pool, "short", APR_BUFFER_STRING);
-    large = apr_buffer_str_make(pool, "l o n g", APR_BUFFER_STRING);
+    apr_buffer_str_set(small, "short", APR_BUFFER_STRING);
+    apr_buffer_str_set(large, "l o n g", APR_BUFFER_STRING);
     ABTS_ASSERT(tc, "'short' less than 'l o n g'",
                     apr_buffer_cmp(small, large) < 0);
     ABTS_ASSERT(tc, "'l o n g' greater than 'short'",
                     apr_buffer_cmp(large, small) > 0);
 
-    small = apr_buffer_str_make(pool, "aardvark", APR_BUFFER_STRING);
-    large = apr_buffer_str_make(pool, "zucchini", APR_BUFFER_STRING);
+    apr_buffer_str_set(small, "aardvark", APR_BUFFER_STRING);
+    apr_buffer_str_set(large, "zucchini", APR_BUFFER_STRING);
     ABTS_ASSERT(tc, "'aardvark' less than 'zucchini'",
                     apr_buffer_cmp(small, large) < 0);
     ABTS_ASSERT(tc, "'zucchini' greater than 'aardvark'",
@@ -230,6 +269,7 @@ abts_suite *testbuffer(abts_suite *suite)
 
     abts_run_test(suite, test_memory_buffer, NULL);
     abts_run_test(suite, test_string_buffer, NULL);
+    abts_run_test(suite, test_null_buffer, NULL);
     abts_run_test(suite, test_buffers, NULL);
     abts_run_test(suite, test_compare_buffers, NULL);
 
