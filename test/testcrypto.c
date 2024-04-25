@@ -2516,6 +2516,7 @@ static const unsigned char test_PRNG_kat0_aes256[128] = {
 
 static void test_crypto_prng(abts_case *tc, apr_crypto_cipher_e cipher, const unsigned char *test_PRNG_kat0)
 {
+    char errbuf[128];
     unsigned char randbytes[128], seed[APR_CRYPTO_PRNG_SEED_SIZE];
     apr_crypto_prng_t *cprng = NULL;
     apr_pool_t *pool = NULL;
@@ -2527,9 +2528,18 @@ static void test_crypto_prng(abts_case *tc, apr_crypto_cipher_e cipher, const un
     ABTS_PTR_NOTNULL(tc, pool);
 
     rv = apr_crypto_prng_init(pool, NULL, cipher, 0, NULL, 0);
+
+    if (APR_EDSOOPEN == rv) {
+        ABTS_NOT_IMPL(tc,
+                apr_psprintf(pool, "Crypto driver default DSO could not be opened"));
+        return;                      
+    }   
+            
     ABTS_ASSERT(tc, "apr_crypto_prng_init returned APR_EREINIT", rv != APR_EREINIT);
     ABTS_ASSERT(tc, "apr_crypto_prng_init returned APR_ENOTIMPL", rv != APR_ENOTIMPL);
-    ABTS_ASSERT(tc, "apr_crypto_prng_init failed", rv == APR_SUCCESS || rv == APR_ENOCIPHER);
+    ABTS_ASSERT(tc, apr_psprintf(pool, "apr_crypto_prng_init failed: %s",
+                                 apr_strerror(rv, errbuf, sizeof(errbuf))),
+                                 rv == APR_SUCCESS || rv == APR_ENOCIPHER);
     if (rv != APR_SUCCESS) {
         apr_pool_destroy(pool);
         return;
@@ -2545,7 +2555,9 @@ static void test_crypto_prng(abts_case *tc, apr_crypto_cipher_e cipher, const un
         ABTS_ASSERT(tc, "apr_crypto_prng_create returned APR_ENOTIMPL", rv != APR_ENOTIMPL);
         ABTS_ASSERT(tc, "apr_crypto_prng_create returned APR_ENOCIPHER", rv != APR_ENOCIPHER);
         ABTS_ASSERT(tc, "apr_crypto_prng_create returned APR_EDSOOPEN", rv != APR_EDSOOPEN);
-        ABTS_ASSERT(tc, "apr_crypto_prng_create failed", rv == APR_SUCCESS);
+        ABTS_ASSERT(tc, apr_psprintf(pool, "apr_crypto_prng_create failed: %s",
+                                     apr_strerror(rv, errbuf, sizeof(errbuf))),
+                                     rv == APR_SUCCESS);
         if (rv != APR_SUCCESS) {
             break;
         }
@@ -2598,6 +2610,7 @@ static void test_crypto_prng_chacha20(abts_case *tc, void *data)
 #if APR_HAS_FORK
 static void test_crypto_fork_random(abts_case *tc, void *data)
 {
+    char errbuf[128];
     unsigned char randbytes[1024];
     apr_pool_t *pool = NULL;
     apr_file_t *pread = NULL;
@@ -2611,9 +2624,18 @@ static void test_crypto_fork_random(abts_case *tc, void *data)
     ABTS_PTR_NOTNULL(tc, pool);
 
     rv = apr_crypto_prng_init(pool, NULL, APR_CRYPTO_CIPHER_AUTO, 0, NULL, 0);
+
+    if (APR_EDSOOPEN == rv) {
+        ABTS_NOT_IMPL(tc,
+                apr_psprintf(pool, "Crypto driver default DSO could not be opened"));
+        return;                      
+    }   
+
     ABTS_ASSERT(tc, "apr_crypto_prng_init returned APR_EREINIT", rv != APR_EREINIT);
     ABTS_ASSERT(tc, "apr_crypto_prng_init returned APR_ENOTIMPL", rv != APR_ENOTIMPL);
-    ABTS_ASSERT(tc, "apr_crypto_prng_init failed", rv == APR_SUCCESS);
+    ABTS_ASSERT(tc, apr_psprintf(pool, "apr_crypto_prng_init failed: %s",
+                                 apr_strerror(rv, errbuf, sizeof(errbuf))),
+                                 rv == APR_SUCCESS);
 
     rv = apr_file_pipe_create(&pread, &pwrite, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
@@ -2681,6 +2703,7 @@ static void *APR_THREAD_FUNC thread_func(apr_thread_t *thd, void *data)
 
 static void test_crypto_thread_random(abts_case *tc, void *data)
 {
+    char errbuf[128];
     static unsigned char zerobytes[800];
     unsigned char *randbytes[NUM_THREADS];
     apr_thread_t *threads[NUM_THREADS];
@@ -2694,9 +2717,18 @@ static void test_crypto_thread_random(abts_case *tc, void *data)
     ABTS_PTR_NOTNULL(tc, pool);
 
     rv = apr_crypto_prng_init(pool, NULL, APR_CRYPTO_CIPHER_AUTO, 0, NULL, flags);
+
+    if (APR_EDSOOPEN == rv) {
+        ABTS_NOT_IMPL(tc,
+                apr_psprintf(pool, "Crypto driver default DSO could not be opened"));
+        return;
+    }
+
     ABTS_ASSERT(tc, "apr_crypto_prng_init returned APR_EREINIT", rv != APR_EREINIT);
     ABTS_ASSERT(tc, "apr_crypto_prng_init returned APR_ENOTIMPL", rv != APR_ENOTIMPL);
-    ABTS_ASSERT(tc, "apr_crypto_prng_init failed", rv == APR_SUCCESS);
+    ABTS_ASSERT(tc, apr_psprintf(pool, "apr_crypto_prng_init failed: %s",
+                                 apr_strerror(rv, errbuf, sizeof(errbuf))),
+                                 rv == APR_SUCCESS);
 
     for (i = 0; i < NUM_THREADS; ++i) {
         randbytes[i] = apr_pcalloc(pool, 800);
