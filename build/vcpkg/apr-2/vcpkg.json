@@ -9,10 +9,6 @@
     "expat",
     {
       "name": "vcpkg-cmake",
-      "host": true
-    },
-    {
-      "name": "vcpkg-cmake",
       "host": true,
       "platform": "windows"
     },
