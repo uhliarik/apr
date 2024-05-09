@@ -158,6 +158,13 @@ IF(APR_MODULAR_DSO)
   SET(apr_have_modular_dso_10 1)
 ENDIF()
 
+# Read current version.
+FILE(STRINGS include/apr_version.h VERSION_STRINGS REGEX "#define (APR_MAJOR_VERSION|APR_MINOR_VERSION|APR_PATCH_VERSION)")
+
+STRING(REGEX REPLACE ".*#define APR_MAJOR_VERSION[ \t]+([0-9]+).*" "\\1" APR_MAJOR_VERSION ${VERSION_STRINGS})
+STRING(REGEX REPLACE ".*#define APR_MINOR_VERSION[ \t]+([0-9]+).*" "\\1" APR_MINOR_VERSION ${VERSION_STRINGS})
+STRING(REGEX REPLACE ".*#define APR_PATCH_VERSION[ \t]+([0-9]+).*" "\\1" APR_PATCH_VERSION ${VERSION_STRINGS})
+
 CONFIGURE_FILE(include/apr.hwc
                ${PROJECT_BINARY_DIR}/apr.h)
 # "COPYONLY" just because anything else isn't implemented ;)
@@ -754,7 +761,14 @@ IF(APR_BUILD_TESTAPR)
 ENDIF (APR_BUILD_TESTAPR)
 
 # Installation
+INCLUDE(CMakePackageConfigHelpers)
+
 string(TOLOWER "${PROJECT_NAME}" project_name_lower)
+
+write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/${project_name_lower}-config-version.cmake"
+  VERSION ${APR_MAJOR_VERSION}.${APR_MINOR_VERSION}.${APR_PATCH_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
 
 INSTALL(TARGETS ${install_targets} EXPORT apr-config
         RUNTIME DESTINATION bin
@@ -766,6 +780,10 @@ INSTALL(EXPORT apr-config
         NAMESPACE apr::
         DESTINATION "lib/cmake/${project_name_lower}"
         FILE "${project_name_lower}-config.cmake"
+)
+
+INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/${project_name_lower}-config-version.cmake"
+        DESTINATION "lib/cmake/${project_name_lower}"
 )
 
 # For DSO modules, install only binaries
