@@ -182,10 +182,25 @@ static apr_status_t file_pipe_create(apr_file_t **in,
                                      apr_pool_t *pool_in,
                                      apr_pool_t *pool_out)
 {
-    int filedes[2];
+    int filedes[2], fd_blocking;
+    apr_interval_time_t fd_timeout;
 
-    if (pipe(filedes) == -1) {
-        return errno;
+#ifdef HAVE_PIPE2
+    if (blocking == APR_FULL_NONBLOCK) {
+        if (pipe2(filedes, O_NONBLOCK) == -1) {
+            return errno;
+        }
+        fd_blocking = BLK_OFF;
+        fd_timeout = 0;
+    }
+    else
+#endif
+    {
+        if (pipe(filedes) == -1) {
+            return errno;
+        }
+        fd_blocking = BLK_ON;
+        fd_timeout = -1;
     }
 
     (*in) = (apr_file_t *)apr_pcalloc(pool_in, sizeof(apr_file_t));
@@ -194,8 +209,8 @@ static apr_status_t file_pipe_create(apr_file_t **in,
     (*in)->is_pipe = 1;
     (*in)->fname = NULL;
     (*in)->buffered = 0;
-    (*in)->blocking = BLK_ON;
-    (*in)->timeout = -1;
+    (*in)->blocking = fd_blocking;
+    (*in)->timeout = fd_timeout;
     (*in)->ungetchar = -1;
     (*in)->flags = APR_INHERIT;
 #if APR_HAS_THREADS
@@ -210,9 +225,9 @@ static apr_status_t file_pipe_create(apr_file_t **in,
     (*out)->is_pipe = 1;
     (*out)->fname = NULL;
     (*out)->buffered = 0;
-    (*out)->blocking = BLK_ON;
+    (*out)->blocking = fd_blocking;
     (*out)->flags = APR_INHERIT;
-    (*out)->timeout = -1;
+    (*out)->timeout = fd_timeout;
 #if APR_HAS_THREADS
     (*out)->thlock = NULL;
 #endif
@@ -234,6 +249,7 @@ static apr_status_t file_pipe_create(apr_file_t **in,
         apr_file_pipe_timeout_set(*in, 0);
         break;
     default:
+        /* These are noops for the pipe2() case */
         apr_file_pipe_timeout_set(*out, 0);
         apr_file_pipe_timeout_set(*in, 0);
         break;

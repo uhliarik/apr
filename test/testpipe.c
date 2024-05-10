@@ -220,6 +220,42 @@ static void wait_pipe(abts_case *tc, void *data)
     APR_ASSERT_SUCCESS(tc, "Wait for pipe failed", rv);
 }
 
+static void nonblock_pipe(abts_case *tc, void *data)
+{
+    apr_status_t rv;
+    apr_interval_time_t delay;
+    char buf[8192];
+    apr_size_t nbytes;
+    unsigned iter;
+
+    rv = apr_file_pipe_create_ex(&readp, &writep, APR_FULL_NONBLOCK, p);
+    APR_ASSERT_SUCCESS(tc, "Couldn't create pipe", rv);
+
+    rv = apr_file_pipe_timeout_get(readp, &delay);
+    APR_ASSERT_SUCCESS(tc, "Couldn't set pipe timeout", rv);
+    ABTS_INT_EQUAL(tc, delay, 0);
+
+    nbytes = sizeof buf;
+    rv = apr_file_read(readp, buf, &nbytes);
+    ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_EAGAIN(rv));
+
+    /* Fill the pipe buffer, although the pipe buffer size is
+     * platform-specific, write up to 8MiB. */
+    nbytes = sizeof buf;
+    memset(buf, 'A', sizeof buf);
+    rv = APR_SUCCESS;
+
+    for (iter = 0; iter < 1024 && rv == APR_SUCCESS; iter++)
+        rv = apr_file_write(writep, buf, &nbytes);
+
+    ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_EAGAIN(rv));
+
+    nbytes = sizeof buf;
+    /* Reading should now work. */
+    rv = apr_file_read(readp, buf, &nbytes);
+    APR_ASSERT_SUCCESS(tc, "Reading from pipe", rv);
+}
+
 abts_suite *testpipe(abts_suite *suite)
 {
     suite = ADD_SUITE(suite)
@@ -234,6 +270,9 @@ abts_suite *testpipe(abts_suite *suite)
     abts_run_test(suite, test_pipe_writefull, NULL);
     abts_run_test(suite, close_pipe, NULL);
     abts_run_test(suite, wait_pipe, NULL);
+    abts_run_test(suite, close_pipe, NULL);
+    abts_run_test(suite, nonblock_pipe, NULL);
+    abts_run_test(suite, close_pipe, NULL);
 
     return suite;
 }
