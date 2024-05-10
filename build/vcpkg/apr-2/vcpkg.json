@@ -28,14 +28,14 @@
         }
       ]
     },
+    "dbd-odbc": {
+      "description": "Build ODBC DBD driver"
+    },
     "dbd-sqlite3": {
       "description": "Build SQLite3 DBD driver",
       "dependencies": [
         "sqlite3"
       ]
-    },
-    "dbd-odbc": {
-      "description": "Build ODBC DBD driver"
     },
     "private-headers": {
       "description": "Install non-standard files required for building Apache httpd"
