@@ -78,6 +78,9 @@ extern "C" {
 #ifndef __attribute__
 #define __attribute__(__x)
 #endif
+#ifndef __has_attribute
+#define __has_attribute(__x)            0
+#endif
 #define ENUM_BITFIELD(e,n,w)  signed int n : w
 
 #define APR_HAVE_CONIO_H                0
