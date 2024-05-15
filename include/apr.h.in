@@ -47,7 +47,7 @@
 
 /* So that we can use inline on some critical functions, and use
  * GNUC attributes (such as to get -Wall warnings for printf-like
- * functions).  Only do this in gcc 2.7 or later ... it may work
+ * functions).  __inline__ exists in gcc 2.7 or later ... it may work
  * on earlier stuff, but why chance it.
  *
  * We've since discovered that the gcc shipped with NeXT systems
