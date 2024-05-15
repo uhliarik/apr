@@ -47,7 +47,7 @@
 
 /* So that we can use inline on some critical functions, and use
  * GNUC attributes (such as to get -Wall warnings for printf-like
- * functions).  __inline__ exists in gcc 2.7 or later ... it may work
+ * functions).  Only do this in gcc 2.7 or later ... it may work
  * on earlier stuff, but why chance it.
  *
  * We've since discovered that the gcc shipped with NeXT systems
@@ -59,17 +59,14 @@
 #if !defined(__GNUC__) || __GNUC__ < 2 || \
     (__GNUC__ == 2 && __GNUC_MINOR__ < 7) ||\
     defined(NEXT)
+#ifndef __attribute__
+#define __attribute__(__x)
+#endif
 #define APR_INLINE
 #define APR_HAS_INLINE          0
 #else
 #define APR_INLINE __inline__
 #define APR_HAS_INLINE          1
-#endif
-#ifndef __has_attribute
-#define __has_attribute(__x)    0
-#endif
-#ifndef __attribute__
-#define __attribute__(__x)
 #endif
 
 #define APR_HAVE_ARPA_INET_H     @arpa_ineth@

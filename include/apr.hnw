@@ -75,9 +75,6 @@ extern "C" {
 
 #define APR_INLINE
 #define APR_HAS_INLINE                  0
-#ifndef __has_attribute
-#define __has_attribute(__x)            0
-#endif
 #ifndef __attribute__
 #define __attribute__(__x)
 #endif
