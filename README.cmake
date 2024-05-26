@@ -62,6 +62,9 @@ How to build
                               Default: ON
        APR_BUILD_TESTAPR      Build APR test suite
                               Default: OFF
+       APR_MODULAR_DSO        Use DSO build of modular components. Otherwise modular
+                              components will be statically linked.
+                              Default: ON
        APR_POOL_DEBUG         Turn on pools debugging
                               Default: OFF
        TEST_STATIC_LIBS       Build the test suite to test the APR static
@@ -120,7 +123,6 @@ Known Bugs and Limitations
   + CRYPTO:
     . APU_HAVE_NSS
   + APU_HAVE_ICONV
-* Static builds of APR modules are not supported.
 * XML implementation (i.e., Expat or libxml2) could support static XML impl
   with apr-2.lib.
 
