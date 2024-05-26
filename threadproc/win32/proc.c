@@ -465,32 +465,10 @@ APR_DECLARE(apr_status_t) apr_procattr_addrspace_set(apr_procattr_t *attr,
     return APR_SUCCESS;
 }
 
-/* Used only for the NT code path, a critical section is the fastest
- * implementation available.
+/* Used only for the NT code path.  Use Slim RW lock because it does not
+ * require free.
  */
-static CRITICAL_SECTION proc_lock;
-
-static apr_status_t threadproc_global_cleanup(void *ignored)
-{
-    DeleteCriticalSection(&proc_lock);
-    return APR_SUCCESS;
-}
-
-/* Called from apr_initialize, we need a critical section to handle
- * the pipe inheritance on win32.  This will mutex any process create
- * so as we change our inherited pipes, we prevent another process from
- * also inheriting those alternate handles, and prevent the other process
- * from failing to inherit our standard handles.
- */
-apr_status_t apr_threadproc_init(apr_pool_t *pool)
-{
-    InitializeCriticalSection(&proc_lock);
-    /* register the cleanup */
-    apr_pool_cleanup_register(pool, &proc_lock,
-                                threadproc_global_cleanup,
-                                apr_pool_cleanup_null);
-    return APR_SUCCESS;
-}
+static SRWLOCK proc_lock = SRWLOCK_INIT;
 
 APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
                                           const char *progname,
@@ -794,10 +772,10 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
             si.wShowWindow = SW_HIDE;
         }
 
-        /* LOCK CRITICAL SECTION
+        /* LOCK SRW Lock
          * before we begin to manipulate the inherited handles
          */
-        EnterCriticalSection(&proc_lock);
+        AcquireSRWLockExclusive(&proc_lock);
 
         if ((attr->child_in && attr->child_in->filehand)
             || (attr->child_out && attr->child_out->filehand)
@@ -862,7 +840,7 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
                 rv = apr_get_os_error();
                 CloseHandle(attr->user_token);
                 attr->user_token = NULL;
-                LeaveCriticalSection(&proc_lock);
+                ReleaseSRWLockExclusive(&proc_lock);
                 return rv;
             }
             if (!CreateProcessAsUserW(attr->user_token,
@@ -932,10 +910,10 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
             }
         }
 
-        /* RELEASE CRITICAL SECTION
+        /* RELEASE SRW Lock
          * The state of the inherited handles has been restored.
          */
-        LeaveCriticalSection(&proc_lock);
+        ReleaseSRWLockExclusive(&proc_lock);
 
     }
 

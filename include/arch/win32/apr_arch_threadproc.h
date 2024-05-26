@@ -68,7 +68,5 @@ struct apr_thread_once_t {
     INIT_ONCE once;
 };
 
-extern apr_status_t apr_threadproc_init(apr_pool_t *pool);
-
 #endif  /* ! THREAD_PROC_H */
 
