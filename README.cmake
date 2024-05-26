@@ -62,6 +62,8 @@ How to build
                               Default: ON
        APR_BUILD_TESTAPR      Build APR test suite
                               Default: OFF
+       APR_POOL_DEBUG         Turn on pools debugging
+                              Default: OFF
        TEST_STATIC_LIBS       Build the test suite to test the APR static
                               library instead of the APR dynamic library.
                               Default: OFF
@@ -105,7 +107,6 @@ Known Bugs and Limitations
   cause the build to fail.
 * Options should be provided for remaining features, along with finding any
   necessary libraries
-  + APR_POOL_DEBUG
   + DBM:
     . APU_HAVE_GDBM
     . APU_HAVE_NDBM
