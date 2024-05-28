@@ -58,6 +58,8 @@ How to build
                               Default: OFF
        APU_HAVE_ODBC          Build ODBC DBD driver
                               Default: ON
+       APU_HAVE_SQLITE3       Build SQLite3 DBD driver
+                              Default: OFF
        APR_HAVE_IPV6          Enable IPv6 support
                               Default: ON
        APR_BUILD_TESTAPR      Build APR test suite
@@ -117,7 +119,6 @@ Known Bugs and Limitations
   + DBD:
     . APU_HAVE_PGSQL
     . APU_HAVE_MYSQL
-    . APU_HAVE_SQLITE3
     . APU_HAVE_SQLITE2
     . APU_HAVE_ORACLE
   + CRYPTO:
