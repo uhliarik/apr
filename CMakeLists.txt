@@ -77,6 +77,10 @@ OPTION(APR_MODULAR_DSO      "Use DSO build of modular components." ON)
 OPTION(APR_POOL_DEBUG       "Turn on pools debugging."     OFF)
 OPTION(TEST_STATIC_LIBS     "Test programs use APR static libraries instead of shared libraries?" OFF)
 
+SET(APR_INSTALL_BIN_DIR      "bin"                       CACHE PATH "Install subdirectory for binary files")
+SET(APR_INSTALL_LIB_DIR      "lib"                       CACHE PATH "Install subdirectory for library files")
+SET(APR_INSTALL_INCLUDE_DIR  "include/apr-2"             CACHE PATH "Install subdirectory for include files")
+
 IF(NOT APR_BUILD_SHARED AND NOT APR_BUILD_STATIC)
   MESSAGE(FATAL_ERROR "Both APR_BUILD_SHARED and APR_BUILD_STATIC have been disabled")
 ENDIF()
@@ -569,7 +573,7 @@ IF (APR_BUILD_SHARED)
                              INTERFACE "APR_DECLARE_IMPORT")
   TARGET_INCLUDE_DIRECTORIES(${apr_libname}
     PRIVATE ${APR_INCLUDE_DIRECTORIES} ${XMLLIB_INCLUDE_DIR} ${XLATE_INCLUDE_DIR} ${APR_EXTRA_INCLUDE_DIRECTORIES}
-    INTERFACE $<INSTALL_INTERFACE:include/apr-2> ${APR_INCLUDE_DIRECTORIES}
+    INTERFACE $<INSTALL_INTERFACE:${APR_INSTALL_INCLUDE_DIR}> ${APR_INCLUDE_DIRECTORIES}
   )
   ADD_DEPENDENCIES(${apr_libname} test_char_header)
 ENDIF()
@@ -585,7 +589,7 @@ IF (APR_BUILD_STATIC)
                              INTERFACE "APR_DECLARE_STATIC")
   TARGET_INCLUDE_DIRECTORIES(${apr_name}
     PRIVATE ${APR_INCLUDE_DIRECTORIES} ${XMLLIB_INCLUDE_DIR} ${XLATE_INCLUDE_DIR} ${APR_EXTRA_INCLUDE_DIRECTORIES}
-    INTERFACE $<INSTALL_INTERFACE:include/apr-2> ${APR_INCLUDE_DIRECTORIES}
+    INTERFACE $<INSTALL_INTERFACE:${APR_INSTALL_INCLUDE_DIR}> ${APR_INCLUDE_DIRECTORIES}
   )
   ADD_DEPENDENCIES(${apr_name} test_char_header)
 ENDIF()
@@ -776,9 +780,9 @@ write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/${project_name_low
 )
 
 INSTALL(TARGETS ${install_targets} EXPORT apr-config
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION ${APR_INSTALL_BIN_DIR}
+        LIBRARY DESTINATION ${APR_INSTALL_LIB_DIR}
+        ARCHIVE DESTINATION ${APR_INSTALL_LIB_DIR}
 )
 
 INSTALL(EXPORT apr-config
@@ -793,15 +797,15 @@ INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/${project_name_lower}-config-version.
 
 # For DSO modules, install only binaries
 INSTALL(FILES ${install_modules}
-        DESTINATION bin)
+        DESTINATION ${APR_INSTALL_BIN_DIR})
 
 IF(INSTALL_PDB)
   INSTALL(FILES ${install_bin_pdb}
-          DESTINATION bin
+          DESTINATION ${APR_INSTALL_BIN_DIR}
           CONFIGURATIONS RelWithDebInfo Debug)
 ENDIF()
 
-INSTALL(FILES ${APR_PUBLIC_HEADERS_STATIC} ${APR_PUBLIC_HEADERS_GENERATED} DESTINATION include/apr-2)
+INSTALL(FILES ${APR_PUBLIC_HEADERS_STATIC} ${APR_PUBLIC_HEADERS_GENERATED} DESTINATION ${APR_INSTALL_INCLUDE_DIR})
 IF(APR_INSTALL_PRIVATE_H)
   # Kludges for unexpected dependencies of httpd 2.x, not installed by default
   SET(APR_PRIVATE_H_FOR_HTTPD
@@ -810,7 +814,7 @@ IF(APR_INSTALL_PRIVATE_H)
     include/arch/win32/apr_arch_utf8.h
     include/arch/win32/apr_private.h
     )
-  INSTALL(FILES ${APR_PRIVATE_H_FOR_HTTPD} DESTINATION include/apr-2/arch/win32)
+  INSTALL(FILES ${APR_PRIVATE_H_FOR_HTTPD} DESTINATION ${APR_INSTALL_INCLUDE_DIR}/arch/win32)
 ENDIF()
 
 STRING(TOUPPER "${CMAKE_BUILD_TYPE}" buildtype)
@@ -822,6 +826,9 @@ MESSAGE(STATUS "")
 MESSAGE(STATUS "  Build type ...................... : ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "  Install .pdb (if available)...... : ${INSTALL_PDB}")
 MESSAGE(STATUS "  Install prefix .................. : ${CMAKE_INSTALL_PREFIX}")
+MESSAGE(STATUS "    Directory for binary files .... : PREFIX/${APR_INSTALL_BIN_DIR}")
+MESSAGE(STATUS "    Directory for library files ... : PREFIX/${APR_INSTALL_LIB_DIR}")
+MESSAGE(STATUS "    Directory for include files ... : PREFIX/${APR_INSTALL_INCLUDE_DIR}")
 MESSAGE(STATUS "  C compiler ...................... : ${CMAKE_C_COMPILER}")
 MESSAGE(STATUS "  IPv6 ............................ : ${APR_HAVE_IPV6}")
 MESSAGE(STATUS "  DBD ODBC driver ................. : ${APU_HAVE_ODBC}")
