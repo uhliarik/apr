@@ -77,9 +77,9 @@ OPTION(APR_MODULAR_DSO      "Use DSO build of modular components." ON)
 OPTION(APR_POOL_DEBUG       "Turn on pools debugging."     OFF)
 OPTION(TEST_STATIC_LIBS     "Test programs use APR static libraries instead of shared libraries?" OFF)
 
-SET(APR_INSTALL_BIN_DIR      "bin"                       CACHE PATH "Install subdirectory for binary files")
-SET(APR_INSTALL_LIB_DIR      "lib"                       CACHE PATH "Install subdirectory for library files")
-SET(APR_INSTALL_INCLUDE_DIR  "include/apr-2"             CACHE PATH "Install subdirectory for include files")
+SET(APR_INSTALL_BIN_DIR      "bin"                       CACHE STRING "Install subdirectory for binary files")
+SET(APR_INSTALL_LIB_DIR      "lib"                       CACHE STRING "Install subdirectory for library files")
+SET(APR_INSTALL_INCLUDE_DIR  "include/apr-2"             CACHE STRING "Install subdirectory for include files")
 
 IF(NOT APR_BUILD_SHARED AND NOT APR_BUILD_STATIC)
   MESSAGE(FATAL_ERROR "Both APR_BUILD_SHARED and APR_BUILD_STATIC have been disabled")
