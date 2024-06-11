@@ -84,10 +84,7 @@ APR_DECLARE(apr_status_t) apr_global_mutex_child_init(
                               const char *fname,
                               apr_pool_t *pool)
 {
-    apr_status_t rv;
-
-    rv = apr_proc_mutex_child_init(&((*mutex)->proc_mutex), fname, pool);
-    return rv;
+    return apr_proc_mutex_child_init(&((*mutex)->proc_mutex), fname, pool);
 }
 
 APR_DECLARE(apr_status_t) apr_global_mutex_lock(apr_global_mutex_t *mutex)
@@ -230,11 +227,9 @@ APR_DECLARE(const char *) apr_global_mutex_name(apr_global_mutex_t *mutex)
 
 APR_PERMS_SET_IMPLEMENT(global_mutex)
 {
-    apr_status_t rv;
     apr_global_mutex_t *mutex = (apr_global_mutex_t *)theglobal_mutex;
 
-    rv = APR_PERMS_SET_FN(proc_mutex)(mutex->proc_mutex, perms, uid, gid);
-    return rv;
+    return APR_PERMS_SET_FN(proc_mutex)(mutex->proc_mutex, perms, uid, gid);
 }
 
 APR_POOL_IMPLEMENT_ACCESSOR(global_mutex)
