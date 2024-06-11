@@ -25,6 +25,8 @@ jobs:
             config: --enable-pool-debug
           - name: Pool-debug, maintainer-mode
             config: --enable-pool-debug --enable-maintainer-mode
+          - name: Thread-debug, maintainer-mode
+            config: --enable-thread-debug --enable-maintainer-mode
           - name: Maintainer-mode, no IPv6
             config: --enable-maintainer-mode --disable-ipv6
           - name: Maintainer-mode, -Werror

@@ -141,6 +141,20 @@ static void test_exclusive(abts_case *tc, const char *lockname,
 
     ABTS_ASSERT(tc, "Locks don't appear to work", *x == MAX_COUNTER);
 
+#if defined(APR_THREAD_DEBUG)
+    /* The following tests attempt to (try-)lock a mutex which is
+     * already held by the process. This is undefined behaviour for a
+     * pthreads mutex, and with the ERRORCHECK mutex type enabled for
+     * APR_THREAD_DEBUG, fails with EDEADLOCK. (These tests may fail
+     * for other pthreads implementations as well) */
+    if (mech->num == APR_LOCK_PROC_PTHREAD
+        || ((mech->num == APR_LOCK_DEFAULT || mech->num == APR_LOCK_DEFAULT_TIMED)
+            && APR_USE_PROC_PTHREAD_SERIALIZE)) {
+        fprintf(stderr, "skipping trylock tests for %s\n", mech->name);
+        return;
+    }
+#endif
+
     rv = apr_proc_mutex_trylock(proc_lock);
     if (rv == APR_ENOTIMPL) {
         fprintf(stderr, "%s_trylock() not implemented, ", mech->name);

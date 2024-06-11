@@ -646,6 +646,18 @@ static apr_status_t proc_mutex_pthread_create(apr_proc_mutex_t *new_mutex,
     }
 #endif /* HAVE_PTHREAD_MUTEX_ROBUST[_NP] */
 
+#if defined(APR_THREAD_DEBUG)
+    /* ignore errors. */
+    if ((rv = pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ERRORCHECK))) {
+#ifdef HAVE_ZOS_PTHREADS
+        rv = errno;
+#endif
+        proc_mutex_pthread_cleanup(new_mutex);
+        pthread_mutexattr_destroy(&mattr);
+        return rv;
+    }
+#endif
+
     if ((rv = pthread_mutex_init(&proc_pthread_mutex(new_mutex), &mattr))) {
 #ifdef HAVE_ZOS_PTHREADS
         rv = errno;
