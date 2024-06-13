@@ -186,10 +186,7 @@ static apr_status_t file_pipe_create(apr_file_t **in,
     apr_interval_time_t fd_timeout;
 
 #ifdef HAVE_PIPE2
-    /* If pipe2() is available, use O_NONBLOCK by default unless
-     * APR_FULL_BLOCK is requested, then set the individual pipe state
-     * as desired later - changing the state uses two syscalls. */
-    if (blocking != APR_FULL_BLOCK) {
+    if (blocking == APR_FULL_NONBLOCK) {
         if (pipe2(filedes, O_NONBLOCK) == -1) {
             return errno;
         }
@@ -242,14 +239,21 @@ static apr_status_t file_pipe_create(apr_file_t **in,
     apr_pool_cleanup_register((*out)->pool, (void *)(*out), apr_unix_file_cleanup,
                          apr_pool_cleanup_null);
 
-    /* Set each pipe to the desired O_NONBLOCK state, which may be a
-     * noop depending on whether the pipe2() or pipe() case was
-     * used. (timeout of -1 == blocking) */
-    apr_file_pipe_timeout_set(*in, (blocking == APR_FULL_BLOCK
-                                    || blocking == APR_READ_BLOCK) ? -1 : 0);
-    apr_file_pipe_timeout_set(*out, (blocking == APR_FULL_BLOCK
-                                     || blocking == APR_WRITE_BLOCK) ? -1 : 0);
-
+    switch (blocking) {
+    case APR_FULL_BLOCK:
+        break;
+    case APR_READ_BLOCK:
+        apr_file_pipe_timeout_set(*out, 0);
+        break;
+    case APR_WRITE_BLOCK:
+        apr_file_pipe_timeout_set(*in, 0);
+        break;
+    default:
+        /* These are noops for the pipe2() case */
+        apr_file_pipe_timeout_set(*out, 0);
+        apr_file_pipe_timeout_set(*in, 0);
+        break;
+    }
     return APR_SUCCESS;
 }
 
