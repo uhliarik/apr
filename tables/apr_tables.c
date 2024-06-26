@@ -38,7 +38,11 @@
 #include <strings.h>
 #endif
 
-#if (APR_POOL_DEBUG || defined(MAKE_TABLE_PROFILE)) && APR_HAVE_STDIO_H
+#ifndef APR_TABLE_POOL_DEBUG
+#define APR_TABLE_POOL_DEBUG 0
+#endif
+
+#if (APR_TABLE_POOL_DEBUG || defined(MAKE_TABLE_PROFILE)) && APR_HAVE_STDIO_H
 #include <stdio.h>
 #endif
 
@@ -413,7 +417,7 @@ APR_DECLARE(apr_table_t *) apr_table_copy(apr_pool_t *p, const apr_table_t *t)
 {
     apr_table_t *new = apr_palloc(p, sizeof(apr_table_t));
 
-#if APR_POOL_DEBUG
+#if APR_TABLE_POOL_DEBUG
     /* we don't copy keys and values, so it's necessary that t->a.pool
      * have a life span at least as long as p
      */
@@ -740,7 +744,7 @@ APR_DECLARE(void) apr_table_mergen(apr_table_t *t, const char *key,
     apr_uint32_t checksum;
     int hash;
 
-#if APR_POOL_DEBUG
+#if APR_TABLE_POOL_DEBUG
     {
 	apr_pool_t *pool;
 	pool = apr_pool_find(key);
@@ -814,7 +818,7 @@ APR_DECLARE(void) apr_table_addn(apr_table_t *t, const char *key,
     apr_uint32_t checksum;
     int hash;
 
-#if APR_POOL_DEBUG
+#if APR_TABLE_POOL_DEBUG
     {
 	if (!apr_pool_is_ancestor(apr_pool_find(key), t->a.pool)) {
 	    fprintf(stderr, "apr_table_addn: key not in ancestor pool of t\n");
@@ -846,7 +850,7 @@ APR_DECLARE(apr_table_t *) apr_table_overlay(apr_pool_t *p,
 {
     apr_table_t *res;
 
-#if APR_POOL_DEBUG
+#if APR_TABLE_POOL_DEBUG
     /* we don't copy keys and values, so it's necessary that
      * overlay->a.pool and base->a.pool have a life span at least
      * as long as p
@@ -1237,7 +1241,7 @@ APR_DECLARE(void) apr_table_overlap(apr_table_t *a, const apr_table_t *b,
         return;
     }
 
-#if APR_POOL_DEBUG
+#if APR_TABLE_POOL_DEBUG
     /* Since the keys and values are not copied, it's required that
      * b->a.pool has a lifetime at least as long as a->a.pool. */
     if (!apr_pool_is_ancestor(b->a.pool, a->a.pool)) {
