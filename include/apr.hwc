@@ -296,7 +296,7 @@ extern "C" {
 #define APR_HAVE_IN_ADDR        1
 #define APR_HAVE_INET_ADDR      1
 #define APR_HAVE_INET_NETWORK   0
-#define APR_HAVE_IPV6           @apr_have_ipv6_10@
+#cmakedefine01 APR_HAVE_IPV6
 #define APR_HAVE_SOCKADDR_UN    0
 #define APR_HAVE_MEMMEM         0
 #define APR_HAVE_MEMMOVE        1
@@ -652,25 +652,25 @@ typedef int apr_wait_t;
  */
 #define APU_HAVE_PGSQL          0
 #define APU_HAVE_MYSQL          0
-#define APU_HAVE_SQLITE3        @apu_have_sqlite3_10@
+#cmakedefine01 APU_HAVE_SQLITE3
 #define APU_HAVE_SQLITE2        0
 #define APU_HAVE_ORACLE         0
-#define APU_HAVE_ODBC           @apu_have_odbc_10@
+#cmakedefine01 APU_HAVE_ODBC
 
-#define APU_HAVE_CRYPTO         @apu_have_crypto_10@
+#cmakedefine01 APU_HAVE_CRYPTO
 #define APU_HAVE_CRYPTO_PRNG    0
 #define APU_HAVE_NSS            0
 #define APU_HAVE_COMMONCRYPTO   0
-#define APU_HAVE_OPENSSL        @apu_have_crypto_10@
+#cmakedefine01 APU_HAVE_OPENSSL
 
-#define APR_HAS_LDAP                @apu_have_ldap_10@
+#cmakedefine01 APR_HAS_LDAP
 #define APR_HAS_OPENLDAP_LDAPSDK    0
 #define APR_HAS_MICROSOFT_LDAPSDK   1
 #define APR_HAS_TIVOLI_LDAPSDK      0
 #define APR_HAS_ZOS_LDAPSDK         0
 #define APR_HAS_OTHER_LDAPSDK       0
 
-#define APU_HAVE_ICONV          @apu_have_iconv_10@
+#cmakedefine01 APU_HAVE_ICONV
 #define APR_HAS_XLATE           (APU_HAVE_ICONV)
 
 #define APU_USE_EXPAT           @apu_use_expat_10@

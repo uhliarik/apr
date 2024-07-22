@@ -122,28 +122,10 @@ ENDIF()
 
 # create 1-or-0 representation of feature tests for apr.h
 
-SET(apr_have_ipv6_10 0)
-SET(apu_have_crypto_10 0)
-SET(apu_have_ldap_10 0)
 SET(apu_use_libxml2_10 0)
 SET(apu_use_expat_10 0)
 SET(apu_use_xmllite_10 0)
-SET(apu_have_iconv_10 0)
-SET(apu_have_odbc_10 0)
-SET(apu_have_sqlite3_10 0)
 SET(apr_have_modular_dso_10 0)
-
-IF(APR_HAVE_IPV6)
-  SET(apr_have_ipv6_10 1)
-ENDIF()
-
-IF(APU_HAVE_CRYPTO)
-  SET(apu_have_crypto_10 1)
-ENDIF()
-
-IF(APU_HAVE_LDAP)
-  SET(apu_have_ldap_10 1)
-ENDIF()
 
 IF(APU_USE_EXPAT)
   SET(apu_use_expat_10 1)
@@ -151,16 +133,6 @@ ELSEIF(APU_USE_LIBXML2)
   SET(apu_use_libxml2_10 1)
 ELSE(APU_USE_XMLLITE)
   SET(apu_use_xmllite_10 1)
-ENDIF()
-
-IF(APU_HAVE_ICONV)
-  SET(apu_have_iconv_10 1)
-ENDIF()
-IF(APU_HAVE_ODBC)
-  SET(apu_have_odbc_10 1)
-ENDIF()
-IF(APU_HAVE_SQLITE3)
-  SET(apu_have_sqlite3_10 1)
 ENDIF()
 
 IF(APR_MODULAR_DSO)
