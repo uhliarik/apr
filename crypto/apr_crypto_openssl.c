@@ -38,7 +38,6 @@
 
 #include <openssl/evp.h>
 #include <openssl/rand.h>
-#include <openssl/engine.h>
 #include <openssl/crypto.h>
 #include <openssl/obj_mac.h> /* for NID_* */
 #include <openssl/conf.h>
@@ -96,6 +95,10 @@
 #define APR_USE_OPENSSL_ENGINE_API 1
 #else
 #define APR_USE_OPENSSL_ENGINE_API 0
+#endif
+
+#if APR_USE_OPENSSL_ENGINE_API
+#include <openssl/engine.h>
 #endif
 
 #define LOG_PREFIX "apr_crypto_openssl: "
